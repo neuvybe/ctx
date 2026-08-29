@@ -1,5 +1,5 @@
 # build output + local go cache
-bin/
+/bin/
 .gocache/
 
 # release artifacts (built by tools/build-binaries.mjs / prepare-release.mjs)
