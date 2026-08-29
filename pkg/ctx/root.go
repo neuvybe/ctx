@@ -25,7 +25,8 @@ files plus a reference-context schema for the project.`,
 	root.AddCommand(newInitCmd())
 	root.AddCommand(newUpdateCmd())
 	root.AddCommand(newDoctorCmd())
-	// Upcoming: upgrade, review, status.
+	root.AddCommand(newUpgradeCmd())
+	// Upcoming: review, status.
 	return root
 }
 
