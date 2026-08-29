@@ -1,3 +1,10 @@
+## [0.1.2](https://github.com/neuvybe/ctx/compare/v0.1.1...v0.1.2) (2026-08-29)
+
+
+### Bug Fixes
+
+* ship npm/bin/ctx.js — gitignore 'bin/' was excluding it ([5c3a053](https://github.com/neuvybe/ctx/commit/5c3a053c8c6dc858cc97438da6714fa776c31f13))
+
 ## [0.1.1](https://github.com/neuvybe/ctx/compare/v0.1.0...v0.1.1) (2026-08-29)
 
 
