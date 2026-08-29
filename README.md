@@ -45,32 +45,47 @@ It's the extraction of a working system proven on a real repo: a private
 ## Quick start
 
 ```bash
-# from this platform repo
-./init /path/to/target-repo            # uses default folder .ctx/
-./init /path/to/target-repo .agent     # custom folder name
+# from this repo (dev)
+make build                 # → bin/ctx
+./bin/ctx --version
+./bin/ctx init /path/to/target-repo            # default folder .ctx/
+./bin/ctx init /path/to/target-repo -f .agent   # custom folder name
+./bin/ctx init                 # target defaults to the current directory
+
+# or install (Go users)
+go install github.com/donmclean/ctx/cmd/ctx@latest
 ```
 
-`init` creates `<target>/<.ctx>/` from `template/`, appends the folder to the
-target's `.git/info/exclude`, and fills `{{PROJECT}}` / `{{DATE}}` placeholders.
-Then point an agent at `.ctx/INDEX.md` (or follow
-[`docs/fill-context-workflow.md`](docs/fill-context-workflow.md) to have an
-agent produce accurate `context/*.md` by reading the repo).
+`ctx init` creates `<target>/<.ctx>/` from the embedded templates, substitutes
+`{{PROJECT}}`/`{{DATE}}`, writes a `.ctx-version` stamp, and adds the folder to
+the target's `.git/info/exclude`. (`{{FOUNDER}}`/`{{COLLABORATOR}}`/
+`{{OWNER_INSTRUCTIONS_PATH}}` are intentional user-fill placeholders — an agent
+fills them per `docs/fill-context-workflow.md`.) Then point an agent at
+`.ctx/INDEX.md`. Upcoming commands: `ctx update` (refresh a repo's `.ctx/`),
+`ctx upgrade` (upgrade the CLI), `ctx doctor` (validate).
 
-## Layout of this platform repo
+## Layout of this repo
 
 ```
 ctx/
 ├── README.md                       # this file
-├── init                            # scaffold script
+├── Makefile                        # build / test / install / smoke
+├── go.mod / go.sum                 # Go module (github.com/donmclean/ctx)
+├── cmd/ctx/main.go                 # CLI entrypoint
+├── pkg/ctx/                        # importable library + CLI commands
+│   ├── root.go  init.go  git.go  embed.go  version.go
+│   └── template/                   # the .ctx/ scaffold (embedded via go:embed)
 ├── docs/
 │   ├── principles.md               # the 5 reusable principles
 │   └── fill-context-workflow.md    # how an agent fills context/*.md for a repo
-└── template/                       # the .ctx/ scaffold (parameterized)
+└── bin/                            # build output (gitignored)
 ```
 
 ## Status
 
-Early MVP: template + init + workflow doc. Not a scripted auto-analyzer — an
-agent does the per-project analysis (guided by the workflow doc), because the
-value is the *analysis*, not the file structure. Upgradeability across
-projects is a later concern (MVP is copy-once-and-own).
+Go CLI MVP (increment 1): `ctx init` + `ctx --version`, templates embedded via
+`go:embed`, `.ctx-version` stamp, `.git/info/exclude` wiring. Upcoming:
+`ctx update` (managed-block refresh via markers), `ctx upgrade` (CLI self-update),
+`ctx doctor`, then goreleaser + GitHub Releases + npm launcher distribution.
+Not a scripted auto-analyzer — an agent does the per-project analysis (guided by
+the workflow doc), because the value is the *analysis*, not the file structure.

@@ -1,0 +1,6 @@
+# build output + local go cache
+bin/
+.gocache/
+
+# OS junk
+.DS_Store
