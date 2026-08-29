@@ -18,7 +18,7 @@ release-build:
 	go build -ldflags "-X github.com/donmclean/ctx/pkg/ctx.Version=$(VERSION)" -o bin/$(BINARY) ./cmd/ctx
 
 test:
-	go test ./...
+	go test -race ./...
 
 # Smoke-test ctx init against a throwaway repo.
 smoke: build
