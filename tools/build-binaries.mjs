@@ -29,7 +29,7 @@ const dist = "dist";
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 
-const ldflags = `-X github.com/donmclean/ctx/pkg/ctx.Version=${version}`;
+const ldflags = `-X github.com/neuvybe/ctx/pkg/ctx.Version=${version}`;
 const shacmd = process.platform === "darwin" ? "shasum -a 256" : "sha256sum";
 
 for (const [goos, goarch] of targets) {

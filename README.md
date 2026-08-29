@@ -53,7 +53,7 @@ make build                 # → bin/ctx
 ./bin/ctx init                 # target defaults to the current directory
 
 # or install (Go users)
-go install github.com/donmclean/ctx/cmd/ctx@latest
+go install github.com/neuvybe/ctx/cmd/ctx@latest
 ```
 
 `ctx init` creates `<target>/<.ctx>/` from the embedded templates, substitutes
@@ -79,7 +79,7 @@ Upcoming: `ctx upgrade` (upgrade the CLI binary), `ctx review` (codex wrapper),
 ctx/
 ├── README.md                       # this file
 ├── Makefile                        # build / test / install / smoke
-├── go.mod / go.sum                 # Go module (github.com/donmclean/ctx)
+├── go.mod / go.sum                 # Go module (github.com/neuvybe/ctx)
 ├── cmd/ctx/main.go                 # CLI entrypoint
 ├── pkg/ctx/                        # importable library + CLI commands
 │   ├── root.go  init.go  git.go  embed.go  version.go

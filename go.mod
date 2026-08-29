@@ -1,4 +1,4 @@
-module github.com/donmclean/ctx
+module github.com/neuvybe/ctx
 
 go 1.21.0
 

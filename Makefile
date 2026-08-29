@@ -15,7 +15,7 @@ install: build
 
 # Override version for release builds: make build VERSION=0.1.0
 release-build:
-	go build -ldflags "-X github.com/donmclean/ctx/pkg/ctx.Version=$(VERSION)" -o bin/$(BINARY) ./cmd/ctx
+	go build -ldflags "-X github.com/neuvybe/ctx/pkg/ctx.Version=$(VERSION)" -o bin/$(BINARY) ./cmd/ctx
 
 test:
 	go test -race ./...

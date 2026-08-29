@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/donmclean/ctx/pkg/ctx"
+	"github.com/neuvybe/ctx/pkg/ctx"
 )
 
 func main() {

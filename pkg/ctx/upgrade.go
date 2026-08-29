@@ -16,7 +16,7 @@ import (
 )
 
 // DefaultReleasesAPI is the GitHub Releases API base for the ctx repo.
-const DefaultReleasesAPI = "https://api.github.com/repos/donmclean/ctx"
+const DefaultReleasesAPI = "https://api.github.com/repos/neuvybe/ctx"
 
 // Asset is a release asset (subset of the GitHub API fields).
 type Asset struct {
@@ -249,11 +249,11 @@ func Upgrade(ctx context.Context, base string) (UpgradeResult, error) {
 	method := detectInstallMethod()
 	switch method {
 	case "npm":
-		return UpgradeResult{Method: method, Message: "installed via npm; run `npm i -g @donmclean/ctx@latest`"}, nil
+		return UpgradeResult{Method: method, Message: "installed via npm; run `npm i -g @neuvybe/ctx@latest`"}, nil
 	case "brew":
 		return UpgradeResult{Method: method, Message: "installed via brew; run `brew upgrade ctx`"}, nil
 	case "go-install":
-		return UpgradeResult{Method: method, Message: "installed via go install; run `go install github.com/donmclean/ctx/cmd/ctx@latest`"}, nil
+		return UpgradeResult{Method: method, Message: "installed via go install; run `go install github.com/neuvybe/ctx/cmd/ctx@latest`"}, nil
 	}
 
 	rel, err := latestRelease(ctx, base)

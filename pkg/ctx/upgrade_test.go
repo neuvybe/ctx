@@ -56,7 +56,7 @@ func TestCompareVersions(t *testing.T) {
 
 func TestDetectInstallMethodFor(t *testing.T) {
 	cases := []struct{ path, want string }{
-		{"/usr/local/lib/node_modules/@donmclean/ctx/bin/ctx", "npm"},
+		{"/usr/local/lib/node_modules/@neuvybe/ctx/bin/ctx", "npm"},
 		{"/opt/homebrew/Cellar/ctx/0.1.0/bin/ctx", "brew"},
 		{"/Users/x/homebrew/bin/ctx", "brew"},
 		{"/usr/local/bin/ctx", "direct"},
