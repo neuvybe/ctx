@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# init — scaffold a .ctx/ agent-context folder into a target repo.
+#
+# Usage:
+#   ./init <target-repo> [folder-name]
+#
+# - Creates <target>/<folder>/ from template/ (default folder: .ctx).
+# - Appends the folder to <target>/.git/info/exclude (repo-local, non-tracked —
+#   never touches the target's .gitignore).
+# - Fills {{PROJECT}} (basename of target) and {{DATE}} (today) placeholders.
+# - Idempotent-ish: refuses to overwrite an existing folder; safe to re-run
+#   (skips the exclude line if already present).
+#
+# Principles encoded: see docs/principles.md.
+
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+  echo "usage: $0 <target-repo> [folder-name]" >&2
+  exit 2
+fi
+
+target="$1"
+folder="${2:-.ctx}"
+
+if [ ! -d "$target" ]; then
+  echo "error: target '$target' is not a directory" >&2
+  exit 1
+fi
+if [ ! -d "$target/.git" ] && [ ! -f "$target/.git" ]; then
+  echo "error: target '$target' is not a git repository (no .git)" >&2
+  exit 1
+fi
+
+# Resolve template/ relative to this script's location.
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+template="$script_dir/template"
+if [ ! -d "$template" ]; then
+  echo "error: template/ not found next to this script at $template" >&2
+  exit 1
+fi
+
+dest="$target/$folder"
+if [ -e "$dest" ]; then
+  echo "error: '$dest' already exists — refusing to overwrite. Remove it first if you want a fresh scaffold." >&2
+  exit 1
+fi
+
+project="$(basename "$(cd "$target" && pwd)")"
+date="$(date +%Y-%m-%d)"
+
+echo "→ scaffolding $dest from $template"
+mkdir -p "$dest"
+# Copy template contents into dest, then substitute placeholders.
+cp -R "$template/." "$dest/"
+
+# Substitute placeholders in all .md files.
+if command -v fd >/dev/null 2>&1; then
+  files="$(fd -e md . "$dest")"
+else
+  files="$(find "$dest" -type f -name '*.md')"
+fi
+while IFS= read -r f; do
+  # Use a delimiter that won't appear in the placeholders.
+  sed -i.bak "s|{{PROJECT}}|$project|g; s|{{DATE}}|$date|g" "$f"
+  rm -f "$f.bak"
+done <<< "$files"
+
+# Add the folder to the target's .git/info/exclude (repo-local, non-tracked).
+exclude="$target/.git/info/exclude"
+# Resolve the real git dir for worktrees/submodules (gitfile case).
+if [ -f "$target/.git" ]; then
+  gd="$(sed -n 's|^gitdir: ||p' "$target/.git")"
+  case "$gd" in
+    /*) : ;;
+    *) gd="$target/$gd" ;;
+  esac
+  exclude="$gd/info/exclude"
+fi
+mkdir -p "$(dirname "$exclude")"
+touch "$exclude"
+if grep -qxF "$folder" "$exclude" 2>/dev/null; then
+  echo "→ '$folder' already in $exclude — skip"
+else
+  printf '\n# agent-context working folder (private, repo-local)\n%s/\n' "$folder" >> "$exclude"
+  echo "→ added '$folder/' to $exclude"
+fi
+
+echo "✓ done. Next: point an agent at $dest/INDEX.md, or follow"
+echo "  $script_dir/docs/fill-context-workflow.md to fill context/*.md."
