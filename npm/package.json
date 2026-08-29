@@ -1,0 +1,27 @@
+{
+  "name": "@neuvybe/ctx",
+  "version": "0.1.0",
+  "description": "ctx — a reusable agent-context platform. Scaffolds a private .ctx/ folder (gitignored via .git/info/exclude) into a repo, holding a constitution-vs-log split of governing files plus a reference-context schema. Survives compaction; makes resuming a session cheap.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ctx": "bin/ctx.js"
+  },
+  "files": ["install.js", "bin/ctx.js", "README.md"],
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "dependencies": {
+    "tar": "^7.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": { "node": ">=20" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neuvybe/ctx.git"
+  },
+  "homepage": "https://github.com/neuvybe/ctx#readme",
+  "keywords": ["agent", "context", "cli", "scaffold", "compaction", "resume"]
+}

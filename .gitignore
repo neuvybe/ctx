@@ -2,12 +2,12 @@
 bin/
 .gocache/
 
-# release artifacts (built by tools/build-binaries.mjs)
+# release artifacts (built by tools/build-binaries.mjs / prepare-release.mjs)
 dist/
 
-# node tooling (semantic-release/commitlint devDeps)
+# node tooling devDeps (root package-lock.json IS committed so CI `npm ci` works)
 node_modules/
-package-lock.json
+.husky/_/
 
 # OS junk
 .DS_Store

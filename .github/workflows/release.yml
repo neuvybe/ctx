@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - run: go vet ./...
+      - run: go test -race ./...
+      - run: go build -o /dev/null ./cmd/ctx
+
+  release:
+    name: Semantic Release
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      # PAT from a repo admin so @semantic-release/git's version-bump push can
+      # bypass main-branch rulesets (the default GITHUB_TOKEN -> github-actions[bot]
+      # is not a bypass actor).
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CTX_RELEASE_TOKEN }}
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - name: Semantic Release
+        # Computes the next version from conventional commits, updates CHANGELOG +
+        # npm/package.json, runs tools/prepare-release.mjs (syncs root version +
+        # cross-compiles dist/*.tar.gz), commits the version bump, creates the
+        # GitHub release, and uploads the dist/ archives as release assets.
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.CTX_RELEASE_TOKEN }}
+
+  publish:
+    name: Publish @neuvybe/ctx
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # tokenless OIDC publish (no NPM_TOKEN); provenance needs a public repo
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: main } # the release job just pushed the version bump here
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24' # ships npm >= 11.5.1, required for OIDC trusted publishing
+          registry-url: 'https://registry.npmjs.org'
+      - name: Skip if already published
+        id: check
+        run: |
+          VERSION=$(node -p "require('./npm/package.json').version")
+          if npm view "@neuvybe/ctx@$VERSION" version >/dev/null 2>&1; then
+            echo "Already published @neuvybe/ctx@$VERSION, skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish (tokenless OIDC + provenance)
+        if: steps.check.outputs.skip != 'true'
+        run: npm publish --provenance --access public
+        working-directory: npm
