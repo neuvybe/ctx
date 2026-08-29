@@ -2,5 +2,12 @@
 bin/
 .gocache/
 
+# release artifacts (built by tools/build-binaries.mjs)
+dist/
+
+# node tooling (semantic-release/commitlint devDeps)
+node_modules/
+package-lock.json
+
 # OS junk
 .DS_Store
