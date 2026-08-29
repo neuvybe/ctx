@@ -5,7 +5,7 @@
 // — the user gets a warning + a fallback (`go install`).
 import { fileURLToPath } from "node:url";
 import { request } from "node:https";
-import tar from "tar";
+import * as tar from "tar";
 
 const pkgDir = fileURLToPath(new URL(".", import.meta.url));
 const version = process.env.npm_package_version;

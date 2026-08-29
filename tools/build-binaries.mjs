@@ -42,6 +42,7 @@ for (const [goos, goarch] of targets) {
   });
   execSync(`tar -C "${staging}" -czf "${dist}/ctx_${version}_${goos}_${goarch}.tar.gz" ctx`, {
     stdio: "inherit",
+    env: { ...process.env, COPYFILE_DISABLE: "1" }, // no macOS AppleDouble (._ctx) in archives
   });
   rmSync(staging, { recursive: true, force: true });
   console.log(`✓ ctx_${version}_${goos}_${goarch}.tar.gz`);
