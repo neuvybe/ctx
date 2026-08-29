@@ -1,5 +1,6 @@
 # REVIEW.md — pre-PR adversarial review pass for {{PROJECT}}
 
+<!-- ctx:managed begin -->
 > **Purpose:** a lightweight, second-agent review loop using `codex review`
 > (ChatGPT-authed) to get quick adversarial feedback on a change **before**
 > opening a PR. A *session workflow* (private to `.ctx/`), not tracked repo
@@ -73,8 +74,17 @@ For a big/hard diff, swap `high` → `xhigh` / `max` / `ultra`. Capture with
 Per `OPERATING.md` §7: findings are **proposals to the collaborator**, not
 patches. Triage each; only approved fixes go in before the PR. `codex review`
 does not apply changes.
+<!-- ctx:managed end -->
 
-## Dry-run (optional, to validate the setup)
+## Dry-run (optional — fill when you first run the pass)
 
-> **Fill in** when you first run the pass on this project: record the exact
-> command + the verdict, so future sessions see the expected output shape.
+> Record the exact command + the verdict, so future sessions see the expected
+> output shape. ctx update preserves this section (it's outside the managed
+> block above).
+
+```
+# command:
+codex review ...
+# verdict:
+...
+```

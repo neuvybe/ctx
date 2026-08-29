@@ -1,18 +1,24 @@
 # `.ctx/` — agent working context for {{PROJECT}}
 
-> This folder is the **collaborator's private working context** for {{PROJECT}}
-> — not shipped product. It is gitignored via **`.git/info/exclude`** (repo-local,
-> non-tracked), **not** the repo's `.gitignore`, so it stays private without
-> touching the project's tracked files and survives syncing. It is distinct from
-> the project owner's tracked instruction namespace ({{OWNER_INSTRUCTIONS_PATH}}).
+<!-- ctx:managed begin -->
+> This folder is the collaborator's private working context — not shipped
+> product. It is gitignored via `.git/info/exclude` (repo-local, non-tracked),
+> not the repo's `.gitignore`, so it stays private without touching the
+> project's tracked files and survives syncing. It is distinct from the
+> project owner's tracked instruction namespace.
+<!-- ctx:managed end -->
 
+<!-- ctx:user — fill this once; ctx update preserves it verbatim (it's outside the managed blocks) -->
+Owner's canonical agent instructions live at: {{OWNER_INSTRUCTIONS_PATH}}
+<!-- /ctx:user -->
+
+<!-- ctx:managed begin -->
 ## Why a private folder (not the owner's namespace)
 
-The owner's agent instructions live in **tracked** locations
-({{OWNER_INSTRUCTIONS_PATH}}). This `.ctx/` folder is the collaborator's own
-working context, kept strictly separate to avoid collision. The owner's rules
-govern repo work; `OPERATING.md` here is a session-discipline supplement, not an
-override.
+The owner's agent instructions live in tracked locations. This `.ctx/` folder is
+the collaborator's own working context, kept strictly separate to avoid
+collision. The owner's rules govern repo work; `OPERATING.md` here is a
+session-discipline supplement, not an override.
 
 ## What's here
 
@@ -44,13 +50,15 @@ relevant context docs — not the whole folder.
 - **Don't commit any of this.** It's ignored via `.git/info/exclude` on this
   clone. To share a doc, promote it to a tracked location the owner reviews.
 - **Clone-local caveat:** `.git/info/exclude` doesn't follow a fresh clone.
-  Re-run the platform's `init` on a new clone, or keep your `.ctx/` backed up.
+  Re-run `ctx init` on a new clone, or keep your `.ctx/` backed up.
+- **Stay current:** run `ctx update` to refresh the platform-managed files
+  (this README + `REVIEW.md`) when you upgrade the `ctx` CLI.
 
 ## What this folder is *not*
 
 - Not user documentation — the project's public `README.md` is separate.
 - Not a source of truth — the code is. Verify against source before relying on a
   detail in a build step.
-- Not the owner's canonical instructions — defer to {{OWNER_INSTRUCTIONS_PATH}}
-  on conflict.
+- Not the owner's canonical instructions — defer to them on conflict.
 - Not permanent — anything here can be rewritten or deleted to stay accurate.
+<!-- ctx:managed end -->

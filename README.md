@@ -60,9 +60,18 @@ go install github.com/donmclean/ctx/cmd/ctx@latest
 `{{PROJECT}}`/`{{DATE}}`, writes a `.ctx-version` stamp, and adds the folder to
 the target's `.git/info/exclude`. (`{{FOUNDER}}`/`{{COLLABORATOR}}`/
 `{{OWNER_INSTRUCTIONS_PATH}}` are intentional user-fill placeholders — an agent
-fills them per `docs/fill-context-workflow.md`.) Then point an agent at
-`.ctx/INDEX.md`. Upcoming commands: `ctx update` (refresh a repo's `.ctx/`),
-`ctx upgrade` (upgrade the CLI), `ctx doctor` (validate).
+fills them per `docs/fill-context-workflow.md`.)
+
+`ctx update` refreshes the **platform-managed** files (`README.md`, `REVIEW.md`)
+from the installed CLI's embedded templates — rewriting only the content inside
+`<!-- ctx:managed begin -->`…`<!-- ctx:managed end -->` blocks and preserving
+all your user content verbatim (including the `{{OWNER_INSTRUCTIONS_PATH}}` fill).
+`OPERATING.md`/`CONTINUE.md`/`INDEX.md`/`context/*` are user-owned and never
+touched by update. `ctx doctor` validates the `.ctx/` (exclude entry, version
+stamp, no leftover init placeholders, balanced markers, expected files).
+
+Upcoming: `ctx upgrade` (upgrade the CLI binary), `ctx review` (codex wrapper),
+`ctx status`, then goreleaser + GitHub Releases + npm launcher distribution.
 
 ## Layout of this repo
 
