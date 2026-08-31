@@ -300,12 +300,22 @@ func verifyDocumentMetadata(repo, folder string, metadata documentMetadata) (str
 	if !strings.HasPrefix(strings.ToLower(commit), strings.ToLower(revision)) {
 		return fmt.Sprintf("Git revision %q did not resolve to the recorded commit hash", revision), nil
 	}
-	missing, err := missingStatusSourcesAtRevision(repo, commit, sources)
+	missing, recordedSymlinks, err := inspectStatusSourcesAtRevision(repo, commit, sources)
 	if err != nil {
 		return "", err
 	}
 	if len(missing) > 0 {
 		return fmt.Sprintf("sources were not tracked at %s: %s", revision, strings.Join(missing, ", ")), nil
+	}
+	if len(recordedSymlinks) > 0 {
+		return fmt.Sprintf("sources contain symbolic links at %s: %s", revision, strings.Join(recordedSymlinks, ", ")), nil
+	}
+	currentSymlinks, err := statusSourceSymlinksInWorktree(repo, sources)
+	if err != nil {
+		return "", err
+	}
+	if len(currentSymlinks) > 0 {
+		return "sources contain symbolic links in the current worktree: " + strings.Join(currentSymlinks, ", "), nil
 	}
 	hidden, err := statusSourcesWithHiddenWorktreeChanges(repo, sources)
 	if err != nil {
@@ -371,19 +381,100 @@ func parseVerifiedAt(value string) (string, time.Time, string) {
 	return revision, verifiedDate, ""
 }
 
-func missingStatusSourcesAtRevision(repo, revision string, sources []string) ([]string, error) {
+func inspectStatusSourcesAtRevision(repo, revision string, sources []string) ([]string, []string, error) {
 	var missing []string
+	symlinks := make(map[string]bool)
 	for _, source := range sources {
 		pathspec := ":(top,literal)" + source
-		output, err := gitCommand(repo, "ls-tree", "-r", "--name-only", "-z", revision, "--", pathspec).Output()
+		output, err := gitCommand(repo, "ls-tree", "-r", "--full-tree", "-z", revision, "--", pathspec).Output()
 		if err != nil {
-			return nil, fmt.Errorf("inspect verified source %s at %s: %w", source, revision, err)
+			return nil, nil, fmt.Errorf("inspect verified source %s at %s: %w", source, revision, err)
 		}
 		if len(output) == 0 {
 			missing = append(missing, source)
+			continue
+		}
+		for _, record := range bytes.Split(output, []byte{0}) {
+			if len(record) == 0 {
+				continue
+			}
+			tab := bytes.IndexByte(record, '\t')
+			if tab < 0 {
+				return nil, nil, fmt.Errorf("inspect verified source %s at %s: malformed git ls-tree output", source, revision)
+			}
+			fields := bytes.Fields(record[:tab])
+			if len(fields) < 3 {
+				return nil, nil, fmt.Errorf("inspect verified source %s at %s: malformed git ls-tree metadata", source, revision)
+			}
+			if string(fields[0]) == "120000" {
+				symlinks[filepath.ToSlash(string(record[tab+1:]))] = true
+			}
 		}
 	}
-	return missing, nil
+	sort.Strings(missing)
+	return missing, sortedStatusPaths(symlinks), nil
+}
+
+// statusSourceSymlinksInWorktree inspects every source component with Lstat,
+// then walks real directory sources without following links. Missing or
+// type-changed paths are left to changedStatusSources, which reports them as
+// stale evidence rather than turning Status into an operational failure.
+func statusSourceSymlinksInWorktree(repo string, sources []string) ([]string, error) {
+	symlinks := make(map[string]bool)
+	for _, source := range sources {
+		parts := strings.Split(filepath.FromSlash(source), string(filepath.Separator))
+		current := repo
+		for index, part := range parts {
+			current = filepath.Join(current, part)
+			info, err := os.Lstat(current)
+			if os.IsNotExist(err) {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("inspect verified source %s in current worktree: %w", source, err)
+			}
+			rel := filepath.ToSlash(filepath.Join(parts[:index+1]...))
+			if info.Mode()&os.ModeSymlink != 0 {
+				symlinks[rel] = true
+				break
+			}
+			if index < len(parts)-1 {
+				if !info.IsDir() {
+					break
+				}
+				continue
+			}
+			if !info.IsDir() {
+				break
+			}
+			if err := filepath.WalkDir(current, func(walkPath string, entry fs.DirEntry, walkErr error) error {
+				if walkErr != nil {
+					return walkErr
+				}
+				if walkPath == current || entry.Type()&os.ModeSymlink == 0 {
+					return nil
+				}
+				rel, err := filepath.Rel(repo, walkPath)
+				if err != nil {
+					return err
+				}
+				symlinks[filepath.ToSlash(rel)] = true
+				return nil
+			}); err != nil {
+				return nil, fmt.Errorf("inspect verified directory source %s in current worktree: %w", source, err)
+			}
+		}
+	}
+	return sortedStatusPaths(symlinks), nil
+}
+
+func sortedStatusPaths(paths map[string]bool) []string {
+	ordered := make([]string, 0, len(paths))
+	for path := range paths {
+		ordered = append(ordered, path)
+	}
+	sort.Strings(ordered)
+	return ordered
 }
 
 func validateStatusSourcePath(repo, folder, source string) (string, error) {

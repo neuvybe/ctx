@@ -192,6 +192,136 @@ func TestStatusRejectsSourceThatDidNotExistAtVerifiedRevision(t *testing.T) {
 	}
 }
 
+func TestStatusRejectsSymbolicLinkEvidenceSources(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symbolic-link creation is not generally available to unprivileged Windows tests")
+	}
+
+	t.Run("recorded link into context", func(t *testing.T) {
+		repo, _ := setupStatusRepo(t)
+		link := filepath.Join(repo, "evidence-link")
+		if err := os.Symlink(".ctx/context/overview.md", link); err != nil {
+			t.Skipf("symbolic links unavailable: %v", err)
+		}
+		runStatusGit(t, repo, "add", "evidence-link")
+		runStatusGit(t, repo, "-c", "user.name=ctx-test", "-c", "user.email=ctx@example.invalid", "commit", "-qm", "record linked evidence")
+		revision := strings.TrimSpace(runStatusGit(t, repo, "rev-parse", "HEAD"))
+		if err := os.Remove(link); err != nil {
+			t.Fatal(err)
+		}
+		writeStatusFile(t, link, "regular evidence now\n")
+		writeStatusDocument(t, repo, "context/overview.md", documentMetadata{
+			Status: "verified", VerifiedAt: revision + " @ 2026-08-31", Sources: []string{"evidence-link"},
+		}, "# Overview\n")
+
+		report, err := Status(repo, ".ctx")
+		if err != nil {
+			t.Fatal(err)
+		}
+		check := findStatusCheck(report, "context/overview.md", ContentNotReady)
+		if check == nil || !strings.Contains(check.Detail, "symbolic links at") || !strings.Contains(check.Detail, "evidence-link") {
+			t.Fatalf("recorded symlink evidence check = %+v", check)
+		}
+	})
+
+	t.Run("current link outside repository", func(t *testing.T) {
+		repo, _ := setupStatusRepo(t)
+		evidence := filepath.Join(repo, "evidence.txt")
+		writeStatusFile(t, evidence, "recorded evidence\n")
+		runStatusGit(t, repo, "add", "evidence.txt")
+		runStatusGit(t, repo, "-c", "user.name=ctx-test", "-c", "user.email=ctx@example.invalid", "commit", "-qm", "record regular evidence")
+		revision := strings.TrimSpace(runStatusGit(t, repo, "rev-parse", "HEAD"))
+		if err := os.Remove(evidence); err != nil {
+			t.Fatal(err)
+		}
+		outside := filepath.Join(t.TempDir(), "outside.txt")
+		writeStatusFile(t, outside, "mutable outside evidence\n")
+		if err := os.Symlink(outside, evidence); err != nil {
+			t.Skipf("symbolic links unavailable: %v", err)
+		}
+		writeStatusDocument(t, repo, "context/overview.md", documentMetadata{
+			Status: "verified", VerifiedAt: revision + " @ 2026-08-31", Sources: []string{"evidence.txt"},
+		}, "# Overview\n")
+
+		report, err := Status(repo, ".ctx")
+		if err != nil {
+			t.Fatal(err)
+		}
+		check := findStatusCheck(report, "context/overview.md", ContentNotReady)
+		if check == nil || !strings.Contains(check.Detail, "current worktree") || !strings.Contains(check.Detail, "evidence.txt") {
+			t.Fatalf("current symlink evidence check = %+v", check)
+		}
+	})
+
+	t.Run("recorded directory contains link", func(t *testing.T) {
+		repo, _ := setupStatusRepo(t)
+		writeStatusFile(t, filepath.Join(repo, "evidence", "facts.txt"), "facts\n")
+		if err := os.Symlink("../.ctx/context/overview.md", filepath.Join(repo, "evidence", "linked-context")); err != nil {
+			t.Skipf("symbolic links unavailable: %v", err)
+		}
+		runStatusGit(t, repo, "add", "evidence")
+		runStatusGit(t, repo, "-c", "user.name=ctx-test", "-c", "user.email=ctx@example.invalid", "commit", "-qm", "record evidence directory")
+		revision := strings.TrimSpace(runStatusGit(t, repo, "rev-parse", "HEAD"))
+		writeStatusDocument(t, repo, "context/overview.md", documentMetadata{
+			Status: "verified", VerifiedAt: revision + " @ 2026-08-31", Sources: []string{"evidence"},
+		}, "# Overview\n")
+
+		report, err := Status(repo, ".ctx")
+		if err != nil {
+			t.Fatal(err)
+		}
+		check := findStatusCheck(report, "context/overview.md", ContentNotReady)
+		if check == nil || !strings.Contains(check.Detail, "symbolic links at") || !strings.Contains(check.Detail, "evidence/linked-context") {
+			t.Fatalf("recorded nested symlink evidence check = %+v", check)
+		}
+	})
+
+	t.Run("current directory contains link", func(t *testing.T) {
+		repo, _ := setupStatusRepo(t)
+		writeStatusFile(t, filepath.Join(repo, "evidence", "facts.txt"), "facts\n")
+		runStatusGit(t, repo, "add", "evidence")
+		runStatusGit(t, repo, "-c", "user.name=ctx-test", "-c", "user.email=ctx@example.invalid", "commit", "-qm", "record evidence directory")
+		revision := strings.TrimSpace(runStatusGit(t, repo, "rev-parse", "HEAD"))
+		outside := filepath.Join(t.TempDir(), "outside.txt")
+		writeStatusFile(t, outside, "outside\n")
+		if err := os.Symlink(outside, filepath.Join(repo, "evidence", "linked-outside")); err != nil {
+			t.Skipf("symbolic links unavailable: %v", err)
+		}
+		writeStatusDocument(t, repo, "context/overview.md", documentMetadata{
+			Status: "verified", VerifiedAt: revision + " @ 2026-08-31", Sources: []string{"evidence"},
+		}, "# Overview\n")
+
+		report, err := Status(repo, ".ctx")
+		if err != nil {
+			t.Fatal(err)
+		}
+		check := findStatusCheck(report, "context/overview.md", ContentNotReady)
+		if check == nil || !strings.Contains(check.Detail, "current worktree") || !strings.Contains(check.Detail, "evidence/linked-outside") {
+			t.Fatalf("current nested symlink evidence check = %+v", check)
+		}
+	})
+}
+
+func TestStatusAcceptsTrackedDirectoryEvidence(t *testing.T) {
+	repo, _ := setupStatusRepo(t)
+	writeStatusFile(t, filepath.Join(repo, "evidence", "facts.txt"), "facts\n")
+	runStatusGit(t, repo, "add", "evidence")
+	runStatusGit(t, repo, "-c", "user.name=ctx-test", "-c", "user.email=ctx@example.invalid", "commit", "-qm", "record evidence directory")
+	revision := strings.TrimSpace(runStatusGit(t, repo, "rev-parse", "HEAD"))
+	writeStatusDocument(t, repo, "context/overview.md", documentMetadata{
+		Status: "verified", VerifiedAt: revision + " @ 2026-08-31", Sources: []string{"evidence"},
+	}, "# Overview\n")
+
+	report, err := Status(repo, ".ctx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	check := findStatusCheck(report, "context/overview.md", ContentReady)
+	if check == nil || !strings.Contains(check.Detail, "verified at") {
+		t.Fatalf("directory evidence check = %+v", check)
+	}
+}
+
 func TestStatusDoesNotFollowSymbolicLinks(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("symbolic-link creation is not generally available to unprivileged Windows tests")

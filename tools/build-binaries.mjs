@@ -2,8 +2,9 @@
 // tools/build-binaries.mjs <version>
 //
 // Cross-compiles the ctx CLI for the release matrix and packs each target as
-// dist/ctx_<version>_<goos>_<goarch>.tar.gz (containing a `ctx` binary) — the
-// naming ctx upgrade's pickAsset expects. Also writes dist/checksums.txt.
+// dist/ctx_<version>_<goos>_<goarch>.tar.gz (containing `ctx`, or `ctx.exe` on
+// Windows) — the naming ctx upgrade's pickAsset expects. Also writes
+// dist/checksums.txt.
 // CGO_ENABLED=0 → static binaries (ctx has no C deps).
 //
 // Used by semantic-release's @semantic-release/exec prepareCmd, and by the

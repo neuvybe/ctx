@@ -73,6 +73,10 @@ with exactly one metadata line near the top:
 - `sources` is a JSON array of repo-relative source, test, or canonical-document
   paths that support the claims.
 
+Sources must be tracked regular files or real directories at the recorded
+commit and in the current worktree. Symbolic links, including links nested
+inside a directory source, are rejected rather than followed.
+
 Keep the JSON on one line. `not-applicable` documents retain a short human reason.
 README, INDEX, CONTINUE, OPERATING, and review are mechanics, routing, state, or
 policy rather than project-fact documents, so they do not carry this metadata.
