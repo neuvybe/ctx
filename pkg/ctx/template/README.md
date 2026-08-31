@@ -1,11 +1,13 @@
-# `.ctx/` — agent working context for {{PROJECT}}
+# `{{FOLDER}}/` — agent context for {{PROJECT}}
 
 <!-- ctx:managed begin -->
-> This folder is the collaborator's private working context — not shipped
-> product. It is gitignored via `.git/info/exclude` (repo-local, non-tracked),
-> not the repo's `.gitignore`, so it stays private without touching the
-> project's tracked files and survives syncing. It is distinct from the
-> project owner's tracked instruction namespace.
+> **Active visibility mode: `{{MODE}}`.** `ctx` separates durable project context from
+> machine-local session state. Team mode leaves the durable files visible to Git
+> for review and sharing; local mode excludes this entire folder through Git's
+> repository-local exclude file. The configured continuation path,
+> `{{CONTINUE_PATH}}`, remains local. New scaffolds use `local/CONTINUE.md`;
+> legacy scaffolds retain root `CONTINUE.md`. The CLI never stages or commits
+> generated files.
 <!-- ctx:managed end -->
 
 <!-- ctx:user — fill this once; ctx update preserves it verbatim (it's outside the managed blocks) -->
@@ -13,52 +15,52 @@ Owner's canonical agent instructions live at: {{OWNER_INSTRUCTIONS_PATH}}
 <!-- /ctx:user -->
 
 <!-- ctx:managed begin -->
-## Why a private folder (not the owner's namespace)
+## Audience and ownership
 
-The owner's agent instructions live in tracked locations. This `.ctx/` folder is
-the collaborator's own working context, kept strictly separate to avoid
-collision. The owner's rules govern repo work; `OPERATING.md` here is a
-session-discipline supplement, not an override.
+The project owner's canonical instructions govern repo work. `OPERATING.md` is a
+supplement, not an override. In team mode, changes to durable context and policy
+are ordinary reviewable repository changes. Personal notes and living session
+state belong at `{{CONTINUE_PATH}}`; their Git visibility follows the scaffold
+mode.
 
 ## What's here
 
-| Kind | Files | Role |
+| Class | Files | Role |
 |---|---|---|
-| **Governing** | `OPERATING.md`, `CONTINUE.md`, `INDEX.md`, `REVIEW.md` | How we work + where we are + how to orient + pre-PR review |
-| **Reference** | `context/*.md` | Knowledge about the repo (architecture, formats, extension points, known issues, glossary) |
+| **Durable context** | `README.md`, `OPERATING.md`, `INDEX.md`, `REVIEW.md`, `context/*.md` | Stable working agreements, orientation, review guidance, and verified project knowledge |
+| **Local state** | `{{CONTINUE_PATH}}` | Living session state and resume protocol |
+| **Platform-managed portions** | Managed blocks in `README.md` and `REVIEW.md`, `.ctx-version`, and configuration when present | Upgradeable guidance and scaffold metadata; this maintenance ownership is separate from Git visibility |
 
 **Constitution vs. log split:** `OPERATING.md` is the stable rules of engagement
-(changes only on ratification). `CONTINUE.md` is the living state (changes every
-session). Keeping them apart means iteration is cheap.
+(changed through review/ratification). `{{CONTINUE_PATH}}` is the local living
+state and may change every session.
 
-## Load order for a fresh / resumed agent
+## Load order for a fresh or resumed agent
 
-1. **`OPERATING.md`** — the binding operating mode (session discipline).
-2. **`CONTINUE.md`** — current state + the resume protocol (do this first).
-3. **`INDEX.md`** — repo orientation + which `context/*.md` to pull.
+1. **`OPERATING.md`** — stable operating guidance.
+2. **`{{CONTINUE_PATH}}`** — local state and resume protocol.
+3. **`INDEX.md`** — repo orientation and context-doc routing.
 4. The specific `context/*.md` docs the next step needs.
-
-A compaction only costs re-reading the governing files (~300 lines) plus 1–2
-relevant context docs — not the whole folder.
 
 ## Keeping this folder healthy
 
-- **Update `CONTINUE.md` at the end of every exchange.** A stale continuation
-  file is worse than none.
-- **Don't let reference docs drift.** When code changes, update the matching
-  `context/*.md` in the same step.
-- **Don't commit any of this.** It's ignored via `.git/info/exclude` on this
-  clone. To share a doc, promote it to a tracked location the owner reviews.
-- **Clone-local caveat:** `.git/info/exclude` doesn't follow a fresh clone.
-  Re-run `ctx init` on a new clone, or keep your `.ctx/` backed up.
-- **Stay current:** run `ctx update` to refresh the platform-managed files
-  (this README + `REVIEW.md`) when you upgrade the `ctx` CLI.
+- **Hydrate a fresh team clone:** run `ctx init --folder {{FOLDER}}` to create
+  the missing ignored continuation without rewriting durable files.
+- **Update `{{CONTINUE_PATH}}` at the end of every exchange.** A stale
+  continuation file is worse than none.
+- **Review shared context like code.** In team mode, reconcile relevant
+  `context/*.md` files when the implementation changes.
+- **Keep local state local.** Do not force-add `{{CONTINUE_PATH}}`; never store
+  secrets in agent context merely because Git ignores it.
+- **Respect the configured mode.** `ctx update` preserves it and never converts
+  a legacy or local scaffold to team mode.
+- **Stay current:** run `ctx update --folder {{FOLDER}}` after upgrading the CLI
+  to refresh managed blocks, then review any Git-visible diff.
 
-## What this folder is *not*
+## What this folder is not
 
-- Not user documentation — the project's public `README.md` is separate.
-- Not a source of truth — the code is. Verify against source before relying on a
-  detail in a build step.
-- Not the owner's canonical instructions — defer to them on conflict.
-- Not permanent — anything here can be rewritten or deleted to stay accurate.
+- Not user documentation—the project's public documentation is separate.
+- Not an authority above owner-maintained instructions.
+- Not a substitute for source verification; code remains the source of truth.
+- Not secret storage. “Local” describes Git visibility, not access control.
 <!-- ctx:managed end -->

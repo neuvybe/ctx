@@ -30,7 +30,10 @@ func TestPickAsset(t *testing.T) {
 }
 
 func TestCompareVersions(t *testing.T) {
-	cases := []struct{ cur, lat string; want int }{
+	cases := []struct {
+		cur, lat string
+		want     int
+	}{
 		{"0.1.0", "0.2.0", -1},
 		{"0.2.0", "0.1.0", 1},
 		{"0.1.0", "0.1.0", 0},

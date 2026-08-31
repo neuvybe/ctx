@@ -32,7 +32,7 @@ func TestHasManaged(t *testing.T) {
 	if hasManaged("nothing") {
 		t.Errorf("hasManaged(nothing) = true, want false")
 	}
-	if !hasManaged(managedBegin+"\nx\n"+managedEnd) {
+	if !hasManaged(managedBegin + "\nx\n" + managedEnd) {
 		t.Errorf("hasManaged(block) = false, want true")
 	}
 }
@@ -106,7 +106,7 @@ func TestUpdateManagedContentNoMarkersUnchanged(t *testing.T) {
 
 func TestUpdateRefreshesManagedAndPreservesUserFill(t *testing.T) {
 	repo := mkRepo(t)
-	if err := Init(repo, ".ctx"); err != nil {
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatal(err)
 	}
 	readmePath := filepath.Join(repo, ".ctx", "README.md")
@@ -117,7 +117,7 @@ func TestUpdateRefreshesManagedAndPreservesUserFill(t *testing.T) {
 	// User fill: set the owner-instructions path (outside managed blocks).
 	got := strings.ReplaceAll(string(b), "{{OWNER_INSTRUCTIONS_PATH}}", "OWNERPATH-XYZ")
 	// Corrupt a managed line so we can prove it gets refreshed.
-	got = strings.ReplaceAll(got, "It is gitignored via `.git/info/exclude`", "CORRUPTED-MANAGED")
+	got = strings.ReplaceAll(got, "Team mode leaves the durable files visible to Git", "CORRUPTED-MANAGED")
 	if err := os.WriteFile(readmePath, []byte(got), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestUpdateRefreshesManagedAndPreservesUserFill(t *testing.T) {
 	if strings.Contains(string(after), "CORRUPTED-MANAGED") {
 		t.Errorf("managed corruption not refreshed away:\n%s", after)
 	}
-	if !strings.Contains(string(after), "It is gitignored via `.git/info/exclude`") {
+	if !strings.Contains(string(after), "Team mode leaves the durable files visible to Git") {
 		t.Errorf("managed line not restored from template")
 	}
 	// version stamp bumped to CLI Version
@@ -154,7 +154,7 @@ func TestUpdateNoCtxErrors(t *testing.T) {
 
 func TestUpdateSkipsUserOwnedFile(t *testing.T) {
 	repo := mkRepo(t)
-	if err := Init(repo, ".ctx"); err != nil {
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatal(err)
 	}
 	readmePath := filepath.Join(repo, ".ctx", "README.md")

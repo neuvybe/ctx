@@ -17,19 +17,15 @@
 
 The project owner's canonical agent instructions live at
 {{OWNER_INSTRUCTIONS_PATH}}. Those **govern all repo work and take precedence**
-over this file. `OPERATING.md` is the *collaborator's session-discipline
-supplement* — it refines the increment protocol, the concept gate, and the stop
-protocol in more detail. If anything here conflicts with the owner's rules, the
-owner's rules win; surface the conflict rather than acting on it.
+over this file. `OPERATING.md` is the team's session-discipline supplement—it
+refines the increment protocol, the concept gate, and the stop protocol in more
+detail. If anything here conflicts with the owner's rules, the owner's rules
+win; surface the conflict rather than acting on it. In team mode, changes to
+this file are policy changes and should receive explicit review.
 
-> **Fill in:** who is the owner/founder ({{FOUNDER}})? who is the collaborator
-> directing the agent on this machine ({{COLLABORATOR}})? Adjust the "pair"
-> framing in §0–§2 to the actual relationship (e.g. if the collaborator IS the
-> owner, the pair = the owner themselves and the approval loop is internal).
+## 1. Two work modes — know which one you're in
 
-## 1. Two modes — know which one you're in
-
-| Mode | When | Your job | Default deliverable |
+| Work mode | When | Your job | Default deliverable |
 |---|---|---|---|
 | **Build mode** | A concrete change is directed | Implement the approved increment, nothing more | Code + compact result |
 | **Exploration mode** | Design space still open; "what are the options?" | Surface options + tradeoffs, **no code** | Written options analysis |
@@ -74,7 +70,7 @@ hope.
 ## 5. The no-concept fast lane
 
 Provably concept-free changes (typo/comment fixes, test-only additions mirroring
-existing shape, doc edits to `.ctx/`, mechanical renames with no API change) take
+existing shape, local context-state edits, mechanical renames with no API change) take
 the fast lane: attest "none" and proceed, still show + stop. **Never** fast-lane
 anything touching a §3 category, anything establishing a pattern others copy, or
 anything in the project's sensitive core. When in doubt: it isn't concept-free.
@@ -123,4 +119,4 @@ director is quiet, prep the next proposal and do not implement.
 
 This is a constitution, not a log. Change it only on ratification; record the
 change at the top with a one-line note + date. Iteration of *state* goes in
-`CONTINUE.md`, not here.
+`{{CONTINUE_PATH}}`, not here.

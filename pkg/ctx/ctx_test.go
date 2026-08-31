@@ -3,6 +3,7 @@ package ctx
 import (
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -10,13 +11,15 @@ import (
 	"testing"
 )
 
-// mkRepo makes a temp directory that looks like a git repo (has a .git dir),
-// without needing the git binary — Init only checks .git exists.
+// mkRepo makes a real Git repository so tests exercise Git's effective ignore
+// semantics rather than only the presence of a .git directory.
 func mkRepo(t *testing.T) string {
 	t.Helper()
 	d := t.TempDir()
-	if err := os.Mkdir(filepath.Join(d, ".git"), 0o755); err != nil {
-		t.Fatalf("mkdir .git: %v", err)
+	cmd := exec.Command("git", "init", "-q")
+	cmd.Dir = d
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, output)
 	}
 	return d
 }
@@ -41,7 +44,7 @@ func TestSubstitute(t *testing.T) {
 func TestTemplateFS(t *testing.T) {
 	fsys := TemplateFS()
 	want := []string{
-		"README.md", "OPERATING.md", "CONTINUE.md", "INDEX.md", "REVIEW.md",
+		"README.md", "OPERATING.md", "INDEX.md", "REVIEW.md", "local/CONTINUE.md",
 		"context/overview.md", "context/architecture.md", "context/format.md",
 		"context/extending.md", "context/known-issues.md", "context/glossary.md",
 	}
@@ -69,10 +72,10 @@ func TestTemplateFS(t *testing.T) {
 	}
 }
 
-func TestInit(t *testing.T) {
+func TestInitWithOptionsTeam(t *testing.T) {
 	repo := mkRepo(t)
-	if err := Init(repo, ".ctx"); err != nil {
-		t.Fatalf("Init: %v", err)
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+		t.Fatalf("InitWithOptions: %v", err)
 	}
 
 	// A sample file exists and {{PROJECT}} was substituted to the repo basename.
@@ -110,43 +113,59 @@ func TestInit(t *testing.T) {
 		t.Errorf(".ctx-version = %q, want %q", strings.TrimSpace(string(v)), Version)
 	}
 
-	// .git/info/exclude updated with the folder.
-	exc, err := os.ReadFile(filepath.Join(repo, ".git", "info", "exclude"))
+	// Team mode is the default: durable files are visible and living state is local.
+	state, err := loadScaffoldState(filepath.Join(repo, ".ctx"))
 	if err != nil {
-		t.Fatalf("read exclude: %v", err)
+		t.Fatalf("load scaffold config: %v", err)
 	}
-	if !strings.Contains(string(exc), ".ctx/") {
-		t.Errorf("exclude missing .ctx/")
+	if state.Config.Mode != ModeTeam || state.Legacy {
+		t.Errorf("default state = %+v, want current team mode", state)
+	}
+	if _, err := os.Stat(filepath.Join(repo, ".ctx", "local", "CONTINUE.md")); err != nil {
+		t.Errorf("local/CONTINUE.md missing: %v", err)
+	}
+	if excluded, err := hasFolderExclusion(repo, ".ctx"); err != nil {
+		t.Fatalf("check exclusion: %v", err)
+	} else if excluded {
+		t.Error("team-mode .ctx should not be excluded as a whole")
 	}
 }
 
 func TestInitRefusesOverwrite(t *testing.T) {
 	repo := mkRepo(t)
-	if err := Init(repo, ".ctx"); err != nil {
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatalf("first Init: %v", err)
 	}
-	if err := Init(repo, ".ctx"); err == nil {
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err == nil {
 		t.Errorf("second Init should have errored, got nil")
 	}
 }
 
 func TestInitCustomFolder(t *testing.T) {
 	repo := mkRepo(t)
-	if err := Init(repo, ".agent"); err != nil {
+	if err := InitWithOptions(repo, InitOptions{Folder: ".agent", Mode: ModeTeam}); err != nil {
 		t.Fatalf("Init .agent: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(repo, ".agent", "INDEX.md")); err != nil {
 		t.Errorf(".agent/INDEX.md missing: %v", err)
 	}
-	exc, _ := os.ReadFile(filepath.Join(repo, ".git", "info", "exclude"))
-	if !strings.Contains(string(exc), ".agent/") {
-		t.Errorf("exclude missing .agent/")
+	idx, err := os.ReadFile(filepath.Join(repo, ".agent", "INDEX.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(idx), "{{FOLDER}}") || !strings.Contains(string(idx), ".agent/") {
+		t.Errorf("custom folder was not rendered in INDEX.md")
+	}
+	if excluded, err := hasFolderExclusion(repo, ".agent"); err != nil {
+		t.Fatal(err)
+	} else if excluded {
+		t.Error("team-mode custom folder should not be excluded as a whole")
 	}
 }
 
 func TestInitNotAGitRepo(t *testing.T) {
 	d := t.TempDir() // no .git
-	if err := Init(d, ".ctx"); err == nil {
+	if err := InitWithOptions(d, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err == nil {
 		t.Errorf("Init on non-git dir should error")
 	}
 }
@@ -160,8 +179,8 @@ func TestEnsureExcludedIdempotent(t *testing.T) {
 		t.Fatalf("second ensureExcluded: %v", err)
 	}
 	exc, _ := os.ReadFile(filepath.Join(repo, ".git", "info", "exclude"))
-	// Exactly one ".ctx/" entry line.
-	count := strings.Count(string(exc), "\n.ctx/\n")
+	// Exactly one root-anchored "/.ctx/" entry line.
+	count := strings.Count(string(exc), "\n/.ctx/\n")
 	if count != 1 {
 		t.Errorf("expected exactly 1 .ctx/ exclude entry, got %d in:\n%s", count, exc)
 	}

@@ -1,36 +1,33 @@
-# On-disk format & caching — {{PROJECT}}
+# Data formats & storage — {{PROJECT}}
 
 > **Prompts — answer against the actual code, then delete this block.**
-> - What does the project persist to disk? Where? (file path(s))
-> - What's the wire/record format? (a sample record + field-by-field)
-> - How is access guarded? (file locks, mutexes, lock ordering)
-> - How is serialization made deterministic? (ordering, stamping)
-> - What's the hashing / identity model? (hash type, what goes into it, what's
->   portable vs absolute)
-> - What's the cache key / freshness model? (what invalidates a cache entry;
->   is it content/position/anything-else derived?)
-> - Read path and write path (concise).
-> - How to modify the format safely? (forward-compat, version field?, migration)
+> - Which data formats form a compatibility boundary (files, databases, APIs,
+>   messages, configuration, or other representations)?
+> - Where does each kind of data live or move, and which component owns it?
+> - What is the schema or record shape? Include a representative example and
+>   explain fields that are not self-evident.
+> - How are access and consistency handled (transactions, locks, concurrency,
+>   ordering, or validation)?
+> - What identity, versioning, or freshness rules apply, if any?
+> - What are the read and write paths?
+> - How can a format change safely (backward/forward compatibility and
+>   migration)?
 
-## File location & locking
-
-> Fill in.
-
-## Wire / record format
-
-> Fill in (sample record + field-by-field).
-
-## Serialization determinism
+## Data locations & boundaries
 
 > Fill in.
 
-## Hashing & identity
+## Schemas & record formats
+
+> Fill in (include representative examples where useful).
+
+## Access & consistency
 
 > Fill in.
 
-## Cache key / freshness
+## Identity, versioning & freshness
 
-> Fill in (what invalidates; what guarantees freshness).
+> Fill in (include only the concepts that apply).
 
 ## Read path
 
@@ -40,6 +37,6 @@
 
 > Fill in.
 
-## Modifying the format safely
+## Changing formats safely
 
-> Fill in (forward-compat rules; version field presence; migration notes).
+> Fill in (compatibility guarantees, versioning rules, and migration notes).

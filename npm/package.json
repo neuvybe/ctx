@@ -1,7 +1,7 @@
 {
   "name": "@neuvybe/ctx",
   "version": "0.1.2",
-  "description": "ctx — a reusable agent-context platform. Scaffolds a private .ctx/ folder (gitignored via .git/info/exclude) into a repo, holding a constitution-vs-log split of governing files plus a reference-context schema. Survives compaction; makes resuming a session cheap.",
+  "description": "ctx — a reusable agent-context platform. Shares durable project guidance while keeping per-clone session state private, with an optional whole-folder local mode.",
   "license": "MIT",
   "type": "module",
   "bin": {

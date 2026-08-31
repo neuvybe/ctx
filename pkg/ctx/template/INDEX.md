@@ -1,16 +1,16 @@
 # INDEX.md — {{PROJECT}} agent context index
 
-> **Where this lives:** `.ctx/` is the collaborator's private working context —
-> gitignored via `.git/info/exclude` (repo-local, non-tracked), **not** the
-> repo's `.gitignore`. It is distinct from the owner's tracked instruction
-> namespace ({{OWNER_INSTRUCTIONS_PATH}}), which governs and takes precedence.
+> **Where this lives:** `{{FOLDER}}/` holds durable agent context plus
+> machine-local continuation state. Active visibility mode: **{{MODE}}**. The owner's
+> canonical instruction namespace ({{OWNER_INSTRUCTIONS_PATH}}) governs and
+> takes precedence.
 >
 > **⚠️ Staleness:** `context/*.md` describe the repo *as of the last update*.
 > Verify against current source before relying on a detail in a build step.
 > Reconcile when the repo moves; stamp the banner below with the commit.
 > Reconciliation status: **[not yet filled / ✅ reconciled to `<commit>`]**.
 >
-> Load order: **`OPERATING.md`** → **`CONTINUE.md`** → this file → the
+> Load order: **`OPERATING.md`** → **`{{CONTINUE_PATH}}`** → this file → the
 > `context/*.md` docs your next step needs.
 
 ## What {{PROJECT}} is (one paragraph)
@@ -22,8 +22,7 @@
 ## Status
 
 - **Stage:** [early prototype / mature / …]
-- **Owner / founder:** {{FOUNDER}}; **collaborator on this machine:**
-  {{COLLABORATOR}}.
+- **Project owner / maintainers:** {{FOUNDER}}.
 - **Key capabilities:** [bullets]
 - **What's *not* here yet:** [bullets — mirror the project's TODO surface]
 
@@ -39,7 +38,7 @@
 | File | Role | When |
 |---|---|---|
 | `OPERATING.md` | Binding operating mode (constitution) | Every session, first |
-| `CONTINUE.md` | Current state + resume protocol (living) | Every session, second |
+| `{{CONTINUE_PATH}}` | Local state + resume protocol (living) | Every session, second |
 | `REVIEW.md` | Pre-PR `codex review` pass | Before opening any PR |
 
 ## Context docs (read the ones relevant to your task)
@@ -48,10 +47,10 @@
 |---|---|
 | `context/overview.md` | Always — thesis, value prop, what problem it solves |
 | `context/architecture.md` | Before touching any flow: end-to-end data path, packages, integration paths |
-| `context/format.md` | Before touching persistence/caching/hashing/freshness |
-| `context/extending.md` | Before adding a language/provider/plugin/query/tool/etc. |
+| `context/format.md` | Before changing data formats, storage, or compatibility rules |
+| `context/extending.md` | Before adding or integrating a new capability |
 | `context/known-issues.md` | Before concurrency work, or to avoid known rough edges |
-| `context/glossary.md` | When a domain term is unclear |
+| `context/glossary.md` | When a domain-specific term is unclear |
 
 ## Hard-won facts that will trip you up
 

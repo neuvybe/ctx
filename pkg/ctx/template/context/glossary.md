@@ -1,8 +1,8 @@
 # Glossary — {{PROJECT}}
 
 > **Prompts — answer against the actual code, then delete this block.**
-> - Define every domain term the project uses (acronyms, internal names, data
->   structures, concepts). One bold term per entry.
+> - Define every domain-specific term the project uses (acronyms, internal
+>   names, data structures, concepts). One bold term per entry.
 > - For each, include: the package/file it lives in (if concrete), what it
 >   means, and any "not to be confused with" disambiguation.
 > - Write this last — it's the glossary of what you learned filling the other
