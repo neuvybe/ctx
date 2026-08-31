@@ -1,6 +1,7 @@
 package ctx
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -32,7 +33,7 @@ func initLegacy(repo, folder string) error {
 	if _, err := os.Stat(filepath.Join(repo, ".git")); err != nil {
 		return fmt.Errorf("target %s is not a git repository (no .git)", repo)
 	}
-	releaseLock, err := acquireInitLock(repo)
+	releaseLock, err := acquireLifecycleLock(repo)
 	if err != nil {
 		return err
 	}
@@ -85,7 +86,12 @@ func initLegacy(repo, folder string) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.RemoveAll(stageRoot) }()
+	cleanupStageRoot := true
+	defer func() {
+		if cleanupStageRoot {
+			_ = os.RemoveAll(stageRoot)
+		}
+	}()
 	// Keep an interrupted staging namespace invisible to Git, just like current
 	// InitWithOptions creation.
 	if err := os.WriteFile(filepath.Join(stageRoot, ".gitignore"), []byte("*\n"), 0o644); err != nil {
@@ -96,7 +102,10 @@ func initLegacy(repo, folder string) error {
 		return err
 	}
 
-	tfs := TemplateFS()
+	tfs, err := templateFSForLayout(LegacyLayoutVersion)
+	if err != nil {
+		return err
+	}
 	if err := fs.WalkDir(tfs, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -129,6 +138,14 @@ func initLegacy(repo, folder string) error {
 	if err := os.WriteFile(filepath.Join(stage, ".ctx-version"), []byte(Version+"\n"), 0o644); err != nil {
 		return err
 	}
+	stageInfo, err := os.Lstat(stage)
+	if err != nil {
+		return fmt.Errorf("inspect staged legacy scaffold: %w", err)
+	}
+	stageSnapshot, err := snapshotScaffoldTree(stage)
+	if err != nil {
+		return fmt.Errorf("snapshot staged legacy scaffold: %w", err)
+	}
 
 	exclusion, err := addFolderExclusion(repo, folder)
 	if err != nil {
@@ -148,6 +165,20 @@ func initLegacy(repo, folder string) error {
 	}
 	if err := os.Rename(stage, dest); err != nil {
 		return withExcludeRollback(fmt.Errorf("publish scaffold: %w", err), exclusion)
+	}
+	if err := verifyInitializedScaffold(repo, dest, folder, state); err != nil {
+		removed, safeCleanup, rollbackErr := retractPublishedScaffold(dest, stage, stageInfo, stageSnapshot)
+		cleanupStageRoot = safeCleanup
+		postErr := fmt.Errorf("published legacy scaffold failed Git-privacy postcondition: %w", err)
+		if rollbackErr != nil {
+			keepParents = true
+			return fmt.Errorf("%w; could not safely retract it: %v", postErr, rollbackErr)
+		}
+		if removed {
+			return withExcludeRollback(postErr, exclusion)
+		}
+		keepParents = true
+		return postErr
 	}
 	keepParents = true
 	return nil
@@ -229,6 +260,7 @@ func removeEmptyLegacyParents(paths []string) {
 // On a fresh clone of a team scaffold, it also hydrates the missing ignored
 // local/CONTINUE.md without changing any durable file.
 func InitWithOptions(repo string, rawOpts InitOptions) error {
+	addonsExplicit := rawOpts.Addons != nil
 	opts, err := normalizeInitOptions(rawOpts)
 	if err != nil {
 		return err
@@ -239,7 +271,7 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 	if _, err := os.Stat(filepath.Join(repo, ".git")); err != nil {
 		return fmt.Errorf("target %s is not a git repository (no .git)", repo)
 	}
-	releaseLock, err := acquireInitLock(repo)
+	releaseLock, err := acquireLifecycleLock(repo)
 	if err != nil {
 		return err
 	}
@@ -250,7 +282,7 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 		if !info.IsDir() {
 			return fmt.Errorf("%s already exists and is not a directory", dest)
 		}
-		return hydrateTeamLocalState(repo, dest, opts)
+		return hydrateTeamLocalState(repo, dest, opts, addonsExplicit)
 	} else if !os.IsNotExist(err) {
 		return err
 	}
@@ -264,7 +296,11 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 	}
 
 	if opts.Mode == ModeTeam {
-		if err := verifyTeamFilesVisible(repo, opts.Folder); err != nil {
+		paths, err := teamVisibleOutputs(CurrentLayoutVersion, opts.Addons)
+		if err != nil {
+			return err
+		}
+		if err := verifyTeamPathsVisible(repo, opts.Folder, paths); err != nil {
 			return err
 		}
 	} else {
@@ -279,13 +315,25 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 	}
 	project := filepath.Base(abs)
 	date := time.Now().Format("2006-01-02")
-	state := scaffoldState{Config: Config{SchemaVersion: currentSchemaVersion, Mode: opts.Mode}}
+	state := scaffoldState{Config: Config{
+		SchemaVersion:    currentSchemaVersion,
+		LayoutVersion:    CurrentLayoutVersion,
+		TemplateRevision: CurrentTemplateRevision,
+		Project:          project,
+		Mode:             opts.Mode,
+		Addons:           append([]string(nil), opts.Addons...),
+	}}
 
 	stageRoot, err := os.MkdirTemp(repo, ".ctx-init-*")
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.RemoveAll(stageRoot) }()
+	cleanupStageRoot := true
+	defer func() {
+		if cleanupStageRoot {
+			_ = os.RemoveAll(stageRoot)
+		}
+	}()
 	// Git does not record empty directories. Write this before any scaffold
 	// content so a crash can leave only an ignored staging namespace behind.
 	if err := os.WriteFile(filepath.Join(stageRoot, ".gitignore"), []byte("*\n"), 0o644); err != nil {
@@ -296,17 +344,18 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 		return err
 	}
 
-	tfs := TemplateFS()
-	if err := fs.WalkDir(tfs, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		data, rerr := fs.ReadFile(tfs, path)
+	documents, err := DocumentsForLayout(CurrentLayoutVersion, opts.Addons)
+	if err != nil {
+		return err
+	}
+	addonRoutes, err := addonRoutesMarkdown(opts.Addons)
+	if err != nil {
+		return err
+	}
+	for _, document := range documents {
+		data, rerr := readTemplateAsset(document.TemplatePath)
 		if rerr != nil {
-			return rerr
+			return fmt.Errorf("read embedded template %s: %w", document.TemplatePath, rerr)
 		}
 		content := renderTemplate(string(data), templateValues{
 			Project:      project,
@@ -314,24 +363,34 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 			Folder:       opts.Folder,
 			Mode:         state.modeLabel(),
 			ContinuePath: state.continuePath(),
+			AddonRoutes:  addonRoutes,
 		})
-		out := filepath.Join(stage, filepath.FromSlash(path))
+		out := filepath.Join(stage, filepath.FromSlash(document.Path))
 		if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
 			return err
 		}
-		return os.WriteFile(out, []byte(content), 0o644)
-	}); err != nil {
-		return err
+		if err := os.WriteFile(out, []byte(content), 0o644); err != nil {
+			return err
+		}
 	}
 
-	if err := os.WriteFile(filepath.Join(stage, ".gitignore"), []byte("# Machine-local ctx state. Durable team context remains visible to Git.\n/local/\n"), 0o644); err != nil {
+	gitignore := "# Machine-local ctx state. This rule applies in both team and local modes.\n" +
+		"/local/\n" +
+		"# Atomic lifecycle transaction files; these should exist only briefly.\n" +
+		"**/.ctx-update-*\n"
+	if err := os.WriteFile(filepath.Join(stage, ".gitignore"), []byte(gitignore), 0o644); err != nil {
 		return err
 	}
-	if err := writeConfig(stage, opts.Mode); err != nil {
+	if err := writeScaffoldConfig(stage, state.Config); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(stage, ".ctx-version"), []byte(Version+"\n"), 0o644); err != nil {
-		return err
+	stageInfo, err := os.Lstat(stage)
+	if err != nil {
+		return fmt.Errorf("inspect staged scaffold: %w", err)
+	}
+	stageSnapshot, err := snapshotScaffoldTree(stage)
+	if err != nil {
+		return fmt.Errorf("snapshot staged scaffold: %w", err)
 	}
 
 	var exclusion excludeChange
@@ -346,7 +405,6 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 		if err := verifyLocalDestinationDirectoryPrivate(repo, dest, opts.Folder); err != nil {
 			return withExcludeRollback(err, exclusion)
 		}
-		state := scaffoldState{Config: Config{SchemaVersion: currentSchemaVersion, Mode: ModeLocal}}
 		if err := verifyLocalScaffoldPrivate(repo, opts.Folder, state); err != nil {
 			return withExcludeRollback(err, exclusion)
 		}
@@ -358,16 +416,127 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 		}
 		return publishErr
 	}
+	if err := verifyInitializedScaffold(repo, dest, opts.Folder, state); err != nil {
+		removed, safeCleanup, rollbackErr := retractPublishedScaffold(dest, stage, stageInfo, stageSnapshot)
+		cleanupStageRoot = safeCleanup
+		postErr := fmt.Errorf("published scaffold failed Git-visibility postcondition: %w", err)
+		if rollbackErr != nil {
+			return fmt.Errorf("%w; could not safely retract it: %v", postErr, rollbackErr)
+		}
+		if !removed {
+			return postErr
+		}
+		if opts.Mode == ModeLocal {
+			return withExcludeRollback(postErr, exclusion)
+		}
+		return postErr
+	}
 	return nil
 }
 
-func hydrateTeamLocalState(repo, dest string, opts InitOptions) error {
+type scaffoldSnapshotEntry struct {
+	mode os.FileMode
+	data []byte
+}
+
+func snapshotScaffoldTree(root string) (map[string]scaffoldSnapshotEntry, error) {
+	snapshot := make(map[string]scaffoldSnapshotEntry)
+	err := filepath.WalkDir(root, func(current string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		rel, err := filepath.Rel(root, current)
+		if err != nil {
+			return err
+		}
+		if rel == "." {
+			return nil
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 || (!info.IsDir() && !info.Mode().IsRegular()) {
+			return fmt.Errorf("staged entry %s is not a regular file or directory", filepath.ToSlash(rel))
+		}
+		item := scaffoldSnapshotEntry{mode: info.Mode()}
+		if info.Mode().IsRegular() {
+			item.data, err = os.ReadFile(current)
+			if err != nil {
+				return err
+			}
+		}
+		snapshot[filepath.ToSlash(rel)] = item
+		return nil
+	})
+	return snapshot, err
+}
+
+func sameScaffoldSnapshot(left, right map[string]scaffoldSnapshotEntry) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for path, want := range left {
+		got, ok := right[path]
+		if !ok || got.mode != want.mode || !bytes.Equal(got.data, want.data) {
+			return false
+		}
+	}
+	return true
+}
+
+func verifyInitializedScaffold(repo, dest, folder string, state scaffoldState) error {
+	if state.Config.Mode == ModeLocal {
+		return verifyExistingLocalScaffoldPrivate(repo, dest, folder, state)
+	}
+	shared, err := teamSharedPaths(dest)
+	if err != nil {
+		return err
+	}
+	if err := verifyTeamPathsVisible(repo, folder, shared); err != nil {
+		return err
+	}
+	return verifyTeamLocalPrivate(repo, dest, folder, state)
+}
+
+// retractPublishedScaffold removes the final path only while it is still the
+// exact directory staged by this invocation. The moved tree is compared with
+// its pre-publish snapshot before cleanup; concurrent changes are restored at
+// the final path instead of being deleted.
+func retractPublishedScaffold(dest, stage string, stageInfo os.FileInfo, want map[string]scaffoldSnapshotEntry) (removed, safeCleanup bool, err error) {
+	current, err := os.Lstat(dest)
+	if err != nil {
+		return false, true, err
+	}
+	if current.Mode()&os.ModeSymlink != 0 || !current.IsDir() || !os.SameFile(stageInfo, current) {
+		return false, true, fmt.Errorf("published destination changed concurrently")
+	}
+	if err := os.Rename(dest, stage); err != nil {
+		return false, true, err
+	}
+	got, snapshotErr := snapshotScaffoldTree(stage)
+	if snapshotErr == nil && sameScaffoldSnapshot(want, got) {
+		return true, true, nil
+	}
+	if restoreErr := os.Rename(stage, dest); restoreErr != nil {
+		return false, false, fmt.Errorf("published scaffold changed concurrently and is preserved at %s; restoring %s also failed: %v", stage, dest, restoreErr)
+	}
+	if snapshotErr != nil {
+		return false, true, fmt.Errorf("published scaffold changed concurrently; restored it at %s after snapshot failed: %v", dest, snapshotErr)
+	}
+	return false, true, fmt.Errorf("published scaffold changed concurrently; restored it at %s", dest)
+}
+
+func hydrateTeamLocalState(repo, dest string, opts InitOptions, addonsExplicit bool) error {
 	state, err := loadScaffoldState(dest)
 	if err != nil {
 		return fmt.Errorf("%s already exists and cannot be hydrated: %w", dest, err)
 	}
 	if opts.Mode != ModeTeam || state.Legacy || state.Config.Mode != ModeTeam {
 		return fmt.Errorf("%s already exists in %s mode — refusing to overwrite or convert it", dest, state.modeLabel())
+	}
+	if addonsExplicit && !equalStrings(opts.Addons, state.Config.Addons) {
+		return fmt.Errorf("%s already exists with add-ons %v; init cannot change add-ons (use `ctx add`)", dest, state.Config.Addons)
 	}
 	continuePath := filepath.Join(dest, filepath.FromSlash(state.continuePath()))
 	if _, err := os.Lstat(continuePath); err == nil {
@@ -380,13 +549,16 @@ func hydrateTeamLocalState(repo, dest string, opts InitOptions) error {
 	} else if !os.IsNotExist(err) {
 		return err
 	}
-	for _, name := range teamVisibleFiles() {
-		info, err := os.Lstat(filepath.Join(dest, filepath.FromSlash(name)))
-		if err != nil {
-			return fmt.Errorf("cannot hydrate incomplete team scaffold: %s: %w", name, err)
+	required, err := RequiredOutputs(state.layoutVersion(), state.Config.Addons, false)
+	if err != nil {
+		return err
+	}
+	for _, name := range required {
+		if name == state.continuePath() {
+			continue
 		}
-		if !info.Mode().IsRegular() {
-			return fmt.Errorf("cannot hydrate incomplete team scaffold: %s is not a regular file", name)
+		if _, err := inspectDoctorFile(dest, name); err != nil {
+			return fmt.Errorf("cannot hydrate incomplete team scaffold: %s: %w", name, err)
 		}
 	}
 	sharedPaths, err := teamSharedPaths(dest)
@@ -396,38 +568,60 @@ func hydrateTeamLocalState(repo, dest string, opts InitOptions) error {
 	if err := verifyTeamPathsVisible(repo, opts.Folder, sharedPaths); err != nil {
 		return err
 	}
+	project, err := hydrationProject(dest, state)
+	if err != nil {
+		return err
+	}
 	localDir := filepath.Join(dest, "local")
 	createdLocalDir := false
+	var localDirInfo os.FileInfo
 	if info, err := os.Lstat(localDir); os.IsNotExist(err) {
 		if err := os.Mkdir(localDir, 0o755); err != nil {
 			return fmt.Errorf("create local state directory: %w", err)
 		}
 		createdLocalDir = true
+		localDirInfo, err = os.Lstat(localDir)
+		if err != nil {
+			return fmt.Errorf("inspect created local state directory: %w", err)
+		}
 	} else if err != nil {
 		return err
-	} else if !info.IsDir() {
-		return fmt.Errorf("cannot hydrate team scaffold: local is not a directory")
+	} else {
+		if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+			return fmt.Errorf("cannot hydrate team scaffold: local is not a real directory")
+		}
+		localDirInfo = info
 	}
 	keepLocalDir := !createdLocalDir
 	defer func() {
 		if !keepLocalDir {
-			_ = os.Remove(localDir)
+			removeHydrationLocalDirectory(localDir, localDirInfo)
 		}
 	}()
 	if err := verifyTeamLocalPrivate(repo, dest, opts.Folder, state); err != nil {
 		return err
 	}
 
-	tmpl, err := fs.ReadFile(TemplateFS(), "local/CONTINUE.md")
-	if err != nil {
-		return fmt.Errorf("read embedded local continuation: %w", err)
-	}
-	abs, err := filepath.Abs(repo)
+	documents, err := DocumentsForLayout(state.layoutVersion(), state.Config.Addons)
 	if err != nil {
 		return err
 	}
+	var localTemplate string
+	for _, document := range documents {
+		if document.Local {
+			localTemplate = document.TemplatePath
+			break
+		}
+	}
+	if localTemplate == "" {
+		return fmt.Errorf("layout v%d has no local continuation template", state.layoutVersion())
+	}
+	tmpl, err := readTemplateAsset(localTemplate)
+	if err != nil {
+		return fmt.Errorf("read embedded local continuation: %w", err)
+	}
 	content := renderTemplate(string(tmpl), templateValues{
-		Project:      filepath.Base(abs),
+		Project:      project,
 		Date:         time.Now().Format("2006-01-02"),
 		Folder:       opts.Folder,
 		Mode:         state.modeLabel(),
@@ -447,20 +641,103 @@ func hydrateTeamLocalState(repo, dest string, opts InitOptions) error {
 		_ = tmp.Close()
 		return err
 	}
+	tmpInfo, err := tmp.Stat()
+	if err != nil {
+		_ = tmp.Close()
+		return err
+	}
 	if err := tmp.Close(); err != nil {
 		return err
+	}
+	currentLocalInfo, err := os.Lstat(localDir)
+	if err != nil || currentLocalInfo.Mode()&os.ModeSymlink != 0 || !currentLocalInfo.IsDir() || !os.SameFile(localDirInfo, currentLocalInfo) {
+		return fmt.Errorf("local state directory changed during hydration")
 	}
 	// Link publishes without replacing a file created by a concurrent process.
 	if err := os.Link(tmpPath, continuePath); err != nil {
 		return fmt.Errorf("publish local continuation: %w", err)
+	}
+	if err := verifyInitializedScaffold(repo, dest, opts.Folder, state); err != nil {
+		postErr := fmt.Errorf("hydrated local state failed Git-visibility postcondition: %w", err)
+		if rollbackErr := rollbackHydratedContinuation(dest, state.continuePath(), tmpInfo, []byte(content), localDirInfo); rollbackErr != nil {
+			keepLocalDir = true
+			return fmt.Errorf("%w; could not safely retract it: %v", postErr, rollbackErr)
+		}
+		return postErr
 	}
 	keepLocalDir = true
 	_ = os.Remove(tmpPath)
 	return nil
 }
 
-func verifyTeamFilesVisible(repo, folder string) error {
-	return verifyTeamPathsVisible(repo, folder, teamVisibleFiles())
+func hydrationProject(dest string, state scaffoldState) (string, error) {
+	if state.Config.Project != "" {
+		return state.Config.Project, nil
+	}
+	if state.layoutVersion() != LegacyLayoutVersion {
+		return "", fmt.Errorf("configured scaffold has no stable project identity")
+	}
+	readme, err := inspectDoctorFile(dest, "README.md")
+	if err != nil {
+		return "", fmt.Errorf("derive legacy project identity from README.md: %w", err)
+	}
+	readmeLine := firstScaffoldLine(readme)
+	const readmeSeparator = " — agent context for "
+	separator := strings.Index(readmeLine, readmeSeparator)
+	if !strings.HasPrefix(readmeLine, "# `") || separator < 0 {
+		return "", fmt.Errorf("cannot derive stable legacy project identity from README.md heading")
+	}
+	project := strings.TrimSpace(readmeLine[separator+len(readmeSeparator):])
+	if project == "" || strings.Contains(project, "{{") {
+		return "", fmt.Errorf("cannot derive stable legacy project identity from README.md heading")
+	}
+	index, err := inspectDoctorFile(dest, "INDEX.md")
+	if err != nil {
+		return "", fmt.Errorf("cross-check legacy project identity in INDEX.md: %w", err)
+	}
+	indexLine := firstScaffoldLine(index)
+	if indexLine != "# INDEX.md — "+project+" agent context index" {
+		return "", fmt.Errorf("legacy README.md and INDEX.md project identities disagree; repair them before hydration")
+	}
+	return project, nil
+}
+
+func firstScaffoldLine(content []byte) string {
+	return strings.TrimSuffix(strings.SplitN(string(content), "\n", 2)[0], "\r")
+}
+
+func rollbackHydratedContinuation(dest, name string, publishedInfo os.FileInfo, content []byte, localDirInfo os.FileInfo) error {
+	current, err := inspectScaffoldOutput(dest, name, false)
+	if err != nil {
+		return err
+	}
+	if !os.SameFile(publishedInfo, current.info) || current.info.Mode() != publishedInfo.Mode() || !bytes.Equal(current.data, content) {
+		return fmt.Errorf("hydrated continuation changed concurrently")
+	}
+	localDir := filepath.Dir(filepath.Join(dest, filepath.FromSlash(name)))
+	currentLocalInfo, err := os.Lstat(localDir)
+	if err != nil || currentLocalInfo.Mode()&os.ModeSymlink != 0 || !currentLocalInfo.IsDir() || !os.SameFile(localDirInfo, currentLocalInfo) {
+		return fmt.Errorf("local state directory changed during hydration rollback")
+	}
+	if err := os.Remove(filepath.Join(dest, filepath.FromSlash(name))); err != nil {
+		return err
+	}
+	return nil
+}
+
+func teamVisibleOutputs(layoutVersion int, addons []string) ([]string, error) {
+	outputs, err := RequiredOutputs(layoutVersion, addons, false)
+	if err != nil {
+		return nil, err
+	}
+	local := filepath.ToSlash(filepath.Join("local", "CONTINUE.md"))
+	visible := make([]string, 0, len(outputs))
+	for _, output := range outputs {
+		if filepath.ToSlash(output) != local {
+			visible = append(visible, output)
+		}
+	}
+	return visible, nil
 }
 
 func verifyTeamPathsVisible(repo, folder string, paths []string) error {
@@ -487,7 +764,7 @@ func verifyLocalScaffoldPrivate(repo, folder string, state scaffoldState) error 
 	if len(tracked) > 0 {
 		return fmt.Errorf("local mode cannot hide tracked files: %s", strings.Join(tracked, ", "))
 	}
-	paths := append(expectedFilesFor(state), ".ctx-version", ".ctx-local-mode-probe")
+	paths := append(expectedFilesFor(state), ".ctx-local-mode-probe")
 	for _, name := range paths {
 		relPath := filepath.Join(folder, name)
 		ignored, err := gitCheckIgnored(repo, relPath)
@@ -499,6 +776,32 @@ func verifyLocalScaffoldPrivate(repo, folder string, state scaffoldState) error 
 		}
 	}
 	return nil
+}
+
+func verifyExistingLocalScaffoldPrivate(repo, dest, folder string, state scaffoldState) error {
+	info, err := os.Lstat(dest)
+	if err != nil {
+		return fmt.Errorf("inspect local-mode scaffold directory: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		return fmt.Errorf("local-mode scaffold path is not a real directory")
+	}
+	ignored, err := gitCheckIgnored(repo, folder)
+	if err != nil {
+		return fmt.Errorf("verify local-mode Git privacy: %w", err)
+	}
+	if !ignored {
+		return fmt.Errorf("local mode could not ignore %s/ as a directory; remove overriding Git ignore negations or use --mode team", filepath.ToSlash(folder))
+	}
+	return verifyLocalScaffoldPrivate(repo, folder, state)
+}
+
+func removeHydrationLocalDirectory(path string, createdInfo os.FileInfo) {
+	current, err := os.Lstat(path)
+	if err != nil || createdInfo == nil || current.Mode()&os.ModeSymlink != 0 || !current.IsDir() || !os.SameFile(createdInfo, current) {
+		return
+	}
+	_ = os.Remove(path)
 }
 
 func verifyLocalDestinationDirectoryPrivate(repo, dest, folder string) error {
@@ -585,6 +888,7 @@ type templateValues struct {
 	Folder       string
 	Mode         string
 	ContinuePath string
+	AddonRoutes  string
 }
 
 func renderTemplate(s string, values templateValues) string {
@@ -594,6 +898,19 @@ func renderTemplate(s string, values templateValues) string {
 		"{{FOLDER}}", values.Folder,
 		"{{MODE}}", values.Mode,
 		"{{CONTINUE_PATH}}", values.ContinuePath,
+		"{{ADDON_ROUTES}}", values.AddonRoutes,
 	)
 	return replacer.Replace(s)
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

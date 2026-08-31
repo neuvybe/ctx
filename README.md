@@ -1,177 +1,180 @@
-# ctx — a reusable agent-context platform
+# ctx — durable context for coding agents
 
-`ctx` gives coding agents durable, project-specific context that survives
-compaction and makes resuming work cheap. Its default **team mode** keeps stable
-project knowledge available to share while isolating per-clone session state:
+`ctx` creates a small, reviewable context system inside a Git repository. Its
+default **team mode** keeps durable project facts available to share while
+isolating clone/session state:
 
-- durable guidance and reference docs live under `.ctx/` and can be tracked;
-- the living session log lives at `.ctx/local/CONTINUE.md` and is ignored by
-  `.ctx/.gitignore`;
-- `ctx` creates and updates files, but never stages or commits them.
+- core fact documents live under `.ctx/context/`;
+- `.ctx/local/CONTINUE.md` records current local state and stays ignored;
+- `INDEX.md` routes an agent to only the documents a task needs;
+- the glossary add-on is selected by default; other add-ons stay opt-in;
+- `ctx` never stages or commits files.
 
-For work that must remain entirely private, `ctx init --mode local` keeps the
-whole context folder out of Git through `.git/info/exclude`.
+Use `--mode local` when the entire context folder should remain private through
+the repository's common `.git/info/exclude` file.
 
-## What team mode creates
+## Layout v2
+
+A default new initialization creates the fixed core plus glossary:
 
 ```text
 .ctx/
-├── .gitignore          # ignores local/
-├── .ctx-version        # scaffold version
-├── config.json         # schema version + team/local mode
-├── README.md           # what this folder is + health rules
-├── OPERATING.md        # stable operating mode (constitution)
-├── INDEX.md            # repo orientation + load order
-├── REVIEW.md           # pre-PR adversarial review workflow
-├── local/
-│   └── CONTINUE.md     # private living session state
-└── context/
-    ├── overview.md     # what the project is + what's not here yet
-    ├── architecture.md # end-to-end flow + package responsibilities
-    ├── format.md       # data formats, storage, and compatibility
-    ├── extending.md    # project extension points and conventions
-    ├── known-issues.md # races, rough edges, gotchas + fixes
-    └── glossary.md     # domain-specific terms
+├── .gitignore
+├── config.json
+├── README.md
+├── INDEX.md
+├── context/
+│   ├── overview.md
+│   ├── architecture.md
+│   ├── caveats.md
+│   └── glossary.md      # default-selected add-on
+└── local/
+    └── CONTINUE.md
 ```
 
-Everything except `.ctx/local/` is available for the repository owner to review,
-stage, and commit in team mode. The CLI deliberately leaves those Git decisions
-to the user.
+The core has one owner per concern: overview owns purpose and scope;
+architecture owns components and flows; caveats owns confirmed limitations and
+operational gotchas; continuation owns current local state only.
+Large projects can add focused nested documents under `context/` and route to
+them from INDEX's project-owned section without expanding the always-read core.
 
-## Why these choices
+The core stays fixed and lean. Glossary remains an add-on, but new scaffolds
+select it by default because project-specific language is broadly useful and
+the index loads it only when terminology matters. Use `--without glossary` for
+a core-only scaffold. The other add-ons remain opt-in.
 
-- **Durable knowledge can be shared.** `OPERATING.md`, `INDEX.md`, `REVIEW.md`,
-  and `context/*.md` describe the project and its working conventions, so teams
-  can review and improve them like other documentation.
-- **Session state stays local.** `.ctx/local/CONTINUE.md` changes frequently and
-  may contain machine- or session-specific state. `.ctx/.gitignore` keeps it out
-  of commits without hiding the durable docs.
-- **Fully private mode remains available.** `--mode local` adds the whole context
-  folder to the target repository's `.git/info/exclude`; it does not edit the
-  repository's root `.gitignore`.
-- **Constitution and log stay separate.** `OPERATING.md` holds stable rules;
-  `local/CONTINUE.md` holds living state, so routine updates do not re-litigate
-  the operating mode.
-- **The owner's instructions govern.** Canonical owner instructions such as
-  `AGENTS.md` or `CLAUDE.md` take precedence. `.ctx/OPERATING.md` supplements
-  them; it never overrides them.
-- **Resume after compaction.** A fresh agent loads `OPERATING.md` →
-  `local/CONTINUE.md` → `INDEX.md` → the relevant `context/*.md`.
+| Add-on ID | Installed file | Default | Use when |
+|---|---|---:|---|
+| `glossary` | `context/glossary.md` | Yes | Project-specific terminology needs disambiguation |
+| `operating` | `OPERATING.md` | No | The owner wants a shared project-specific working agreement |
+| `contracts` | `context/contracts.md` | No | Data, API, storage, or message compatibility is a real boundary |
+| `extending` | `context/extending.md` | No | The project has supported extension points |
+| `review` | `workflows/review.md` | No | The project wants a shared, tool-neutral review profile |
 
-## Install and initialize
+See [Layout v2 and add-ons](docs/layout-v2.md) for metadata, routing, managed
+markers, and size guidance.
+
+## Install
 
 ```bash
-# npm launcher
 npm install -g @neuvybe/ctx
 ctx --version
-
-# default: team mode
-ctx init /path/to/target-repo
-
-# opt in to a wholly private, repo-local scaffold
-ctx init /path/to/target-repo --mode local
-
-# custom folder; target defaults to the current directory
-ctx init /path/to/target-repo --folder .agent
-ctx init
 ```
 
-For `ctx init`, `--folder` must be one top-level directory name containing only
-letters, digits, `.`, `_`, or `-`. Nested paths such as `docs/ctx` and names
-containing spaces are not supported.
-
-On a fresh clone of a team scaffold, run `ctx init` again (with the same
-`--folder`, if customized). It recognizes the committed team configuration and
-creates only the ignored `local/CONTINUE.md`; it does not rewrite durable files.
-
-For development from this repository:
-
-```bash
-make build                 # → bin/ctx
-./bin/ctx --version
-./bin/ctx init /path/to/target-repo
-```
-
-Go users can also install with:
+Or install with Go:
 
 ```bash
 go install github.com/neuvybe/ctx/cmd/ctx@latest
 ```
 
-For Go embedders, `InitWithOptions` makes the mode explicit. The older exported
-`Init(repo, folder)` wrapper preserves its original whole-folder-local behavior
-and root `CONTINUE.md` layout so existing integrations do not become shareable
-or change paths silently.
-
-`ctx init` substitutes `{{PROJECT}}` and `{{DATE}}`, writes a `.ctx-version`
-stamp, and leaves `{{FOUNDER}}`, `{{COLLABORATOR}}`, and
-`{{OWNER_INSTRUCTIONS_PATH}}` for the fill workflow. In team mode it writes
-`.ctx/.gitignore` for `local/`; in local mode it adds the whole selected folder
-to `.git/info/exclude`. It never runs `git add` or `git commit`.
-
-After filling a team scaffold, review the durable files and decide explicitly
-whether to share them:
+## Initialize and extend
 
 ```bash
-git status --short .ctx
-git add .ctx               # optional; local/ remains ignored
-git commit                 # always user-controlled
+# Default: team mode with the v2 core and glossary add-on
+ctx init /path/to/repo
+
+# Core only: omit the default-selected glossary
+ctx init /path/to/repo --without glossary
+
+# Entire scaffold private to the repository
+ctx init /path/to/repo --mode local
+
+# Select other add-ons at creation; --with is repeatable and comma-friendly
+ctx init /path/to/repo --with operating,contracts
+
+# Inspect the catalog, then add one capability later
+ctx add --list
+ctx add /path/to/repo review
+
+# One custom top-level folder name
+ctx init /path/to/repo --folder .agent
 ```
 
-The example uses the default `.ctx` folder. Replace it with the selected custom
-folder everywhere, and repeat `--folder <name>` on `update` and `doctor`.
+For a new initialization, `--folder` accepts one top-level directory name made
+of letters, digits, `.`, `_`, or `-`. Nested paths and spaces are not part of
+the new-layout CLI contract.
 
-See [`docs/fill-context-workflow.md`](docs/fill-context-workflow.md) for the
-agent-guided analysis process.
+On a fresh clone containing committed team context, run `ctx init` again and
+repeat `--folder` when customized. It hydrates the missing ignored continuation
+without rewriting durable files.
+
+## Fill and maintain context
+
+Project-fact documents carry one machine-readable metadata line:
+
+```html
+<!-- ctx:doc {"status":"draft","verifiedAt":"","sources":[]} -->
+```
+
+Set status to `verified` only after checking the recorded source paths, using
+`<commit-hash> @ YYYY-MM-DD` (`git rev-parse HEAD`) as the immutable verification
+point. Use `not-applicable` deliberately rather than filling an
+irrelevant document with boilerplate. `draft` facts are leads to verify, not
+authority.
+
+Use the checks for their distinct purposes:
+
+- `ctx doctor [target] [--folder .ctx]` validates scaffold structure, layout
+  compatibility,
+  managed-marker grammar, and Git visibility/privacy boundaries.
+- `ctx status [target] [--folder .ctx]` summarizes document readiness, flags
+  listed sources changed since their recorded commit, and emits non-failing size
+  guidance. It does not verify factual truth or source sufficiency.
+
+The normal maintenance flow is:
+
+```bash
+ctx update /path/to/repo
+ctx doctor /path/to/repo
+ctx status /path/to/repo
+git status --short .ctx
+```
+
+In team mode, a human reviews and chooses whether to stage durable changes;
+`local/` remains ignored. In local mode, the whole selected folder remains
+ignored. See the [fill-context workflow](docs/fill-context-workflow.md).
 
 ## Commands
 
-- `ctx init [target] [--folder .ctx] [--mode team|local]` — create a scaffold;
-  team mode is the default.
-- `ctx update [target] [--folder .ctx]` — refresh managed blocks in `README.md` and `REVIEW.md`,
-  preserve user-owned content, and bump `.ctx-version`. It preserves the
-  scaffold's sharing mode and never touches `local/CONTINUE.md`.
-- `ctx doctor [target] [--folder .ctx]` — validate the scaffold, version stamp, ignore policy,
-  placeholders, managed markers, and expected files.
-- `ctx upgrade` — self-update a direct binary from the latest GitHub release or
-  print the appropriate package-manager command.
-- `ctx --version` — print the installed version.
+- `ctx init [target] [--folder .ctx] [--mode team|local] [--with <addons>] [--without <addons>]`
+- `ctx add [target] <addon...> [--folder .ctx]`
+- `ctx add --list`
+- `ctx update [target] [--folder .ctx]`
+- `ctx doctor [target] [--folder .ctx]`
+- `ctx status [target] [--folder .ctx]`
+- `ctx upgrade`
+- `ctx --version`
 
-## Existing local scaffolds
+## V1 compatibility
 
-Scaffolds created before team mode remain local: the whole folder stays excluded
-through `.git/info/exclude`, and their continuation remains at
-`<folder>/CONTINUE.md`. New team and local scaffolds use
-`<folder>/local/CONTINUE.md`. `ctx update` does not silently move or expose a
-legacy scaffold; converting one to team mode will require an explicit future
-conversion flow.
+Existing schema-v1 and config-less legacy scaffolds are not silently converted
+to layout v2. Their file names, unnamed ordinal managed blocks, update source,
+and continuation location remain on the v1 compatibility path. Config-less
+legacy scaffolds stay whole-folder local with root `CONTINUE.md`.
 
-See the [`0.2` migration guide](docs/migrations/0.2-team-mode.md) for the exact
-default change, compatibility behavior, and opt-out command.
+The deprecated Go `Init(repo, folder)` compatibility wrapper likewise emits the
+legacy v1 layout and preserves safe repository-contained custom paths accepted
+by ctx 0.1. New Go integrations should use the current options-based API.
 
-Git's repository-local exclude is shared by linked worktrees. To prevent one
-worktree from hiding another's tracked or team context, `ctx` rejects local
-initialization when a sibling worktree has tracked content or a team scaffold
-for the same folder.
+See the [0.2 migration guide](docs/migrations/0.2-team-mode.md) for the team-mode
+default and legacy visibility behavior. See the
+[layout-v2 migration guide](docs/migrations/0.3-layout-v2.md) for the lean core,
+add-ons, readiness metadata, and Go API notes.
 
-## Layout of this repository
+## Design principles
 
-```text
-ctx/
-├── .github/workflows/               # PR checks + releases
-├── cmd/ctx/main.go                   # CLI entrypoint
-├── docs/                             # principles + fill workflow
-├── npm/                              # published npm launcher
-├── pkg/ctx/                          # library, commands, tests, templates
-├── tools/                            # release/version/binary tooling
-├── Makefile
-├── go.mod / go.sum
-└── package.json / package-lock.json  # commit + release tooling
+The short version is: share durable evidence, keep state local, load context
+hierarchically, defer to owner instructions, and distinguish structural health
+from factual readiness. The full rationale is in [Principles](docs/principles.md).
+
+## Development
+
+```bash
+make build
+make test
+make smoke
 ```
 
-## Status
-
-The CLI ships `init`, `update`, `doctor`, `upgrade`, embedded templates, GitHub
-release binaries, and the `@neuvybe/ctx` npm launcher. It is intentionally not a
-scripted auto-analyzer: an agent performs the per-project analysis because the
-value is the accuracy of the context, not merely the file structure.
+Release automation ships GitHub binaries and the `@neuvybe/ctx` npm launcher.
+The platform supplies structure and lifecycle checks; an agent still has to read
+the actual repository and write accurate context.

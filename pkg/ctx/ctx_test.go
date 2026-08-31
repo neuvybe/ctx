@@ -72,6 +72,26 @@ func TestTemplateFS(t *testing.T) {
 	}
 }
 
+func TestVersionedAndAddonTemplateFilesystems(t *testing.T) {
+	v2, err := TemplateFSForLayout(CurrentLayoutVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fs.Stat(v2, "context/caveats.md"); err != nil {
+		t.Fatalf("v2 template filesystem: %v", err)
+	}
+	glossary, err := AddonTemplateFS("glossary")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fs.Stat(glossary, "context/glossary.md"); err != nil {
+		t.Fatalf("glossary template filesystem: %v", err)
+	}
+	if _, err := AddonTemplateFS("unknown"); err == nil {
+		t.Fatal("AddonTemplateFS accepted an unknown add-on")
+	}
+}
+
 func TestInitWithOptionsTeam(t *testing.T) {
 	repo := mkRepo(t)
 	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
@@ -99,18 +119,14 @@ func TestInitWithOptionsTeam(t *testing.T) {
 		t.Errorf("overview.md still has {{PROJECT}}")
 	}
 
-	// Intentional user-fill placeholders are preserved (not init-substituted).
-	if !strings.Contains(string(idx), "{{FOUNDER}}") {
-		t.Errorf("INDEX.md should retain {{FOUNDER}} for the user to fill")
+	if strings.Contains(string(idx), "{{ADDON_ROUTES}}") {
+		t.Errorf("INDEX.md still has {{ADDON_ROUTES}}")
 	}
-
-	// version stamp
-	v, err := os.ReadFile(filepath.Join(repo, ".ctx", ".ctx-version"))
-	if err != nil {
-		t.Fatalf("read .ctx-version: %v", err)
+	if !strings.Contains(string(idx), "context/glossary.md") {
+		t.Errorf("INDEX.md missing default glossary route")
 	}
-	if strings.TrimSpace(string(v)) != Version {
-		t.Errorf(".ctx-version = %q, want %q", strings.TrimSpace(string(v)), Version)
+	if _, err := os.Lstat(filepath.Join(repo, ".ctx", ".ctx-version")); !os.IsNotExist(err) {
+		t.Fatalf("layout v2 should not create .ctx-version: %v", err)
 	}
 
 	// Team mode is the default: durable files are visible and living state is local.
@@ -121,6 +137,20 @@ func TestInitWithOptionsTeam(t *testing.T) {
 	if state.Config.Mode != ModeTeam || state.Legacy {
 		t.Errorf("default state = %+v, want current team mode", state)
 	}
+	if state.Config.SchemaVersion != currentSchemaVersion || state.layoutVersion() != CurrentLayoutVersion || state.Config.Project != filepath.Base(repo) {
+		t.Errorf("default config = %+v, want schema/layout v2 with stable project", state.Config)
+	}
+	if !reflect.DeepEqual(state.Config.Addons, []string{"glossary"}) {
+		t.Errorf("default add-ons = %v, want [glossary]", state.Config.Addons)
+	}
+	if _, err := os.Stat(filepath.Join(repo, ".ctx", "context", "glossary.md")); err != nil {
+		t.Errorf("default glossary missing: %v", err)
+	}
+	for _, optional := range []string{"OPERATING.md", "REVIEW.md"} {
+		if _, err := os.Lstat(filepath.Join(repo, ".ctx", filepath.FromSlash(optional))); !os.IsNotExist(err) {
+			t.Errorf("non-default add-on unexpectedly created %s: %v", optional, err)
+		}
+	}
 	if _, err := os.Stat(filepath.Join(repo, ".ctx", "local", "CONTINUE.md")); err != nil {
 		t.Errorf("local/CONTINUE.md missing: %v", err)
 	}
@@ -128,6 +158,56 @@ func TestInitWithOptionsTeam(t *testing.T) {
 		t.Fatalf("check exclusion: %v", err)
 	} else if excluded {
 		t.Error("team-mode .ctx should not be excluded as a whole")
+	}
+	if ignored, err := gitCheckIgnored(repo, filepath.Join(".ctx", "context", ".ctx-update-probe")); err != nil || !ignored {
+		t.Fatalf("lifecycle transaction probe ignored = %v, err = %v", ignored, err)
+	}
+}
+
+func TestInitWithOptionsExplicitEmptyAddonsCreatesCoreOnly(t *testing.T) {
+	repo := mkRepo(t)
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{}}); err != nil {
+		t.Fatal(err)
+	}
+	state, err := loadScaffoldState(filepath.Join(repo, ".ctx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Config.Addons) != 0 {
+		t.Fatalf("core-only config add-ons = %v, want none", state.Config.Addons)
+	}
+	if _, err := os.Lstat(filepath.Join(repo, ".ctx", "context", "glossary.md")); !os.IsNotExist(err) {
+		t.Fatalf("core-only init created glossary: %v", err)
+	}
+	index, err := os.ReadFile(filepath.Join(repo, ".ctx", "INDEX.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(index), "No optional add-ons installed") {
+		t.Fatalf("core-only INDEX missing empty routing guidance:\n%s", index)
+	}
+}
+
+func TestInitWithOptionsImplicitAddonsHonorPersistedConfigDuringHydration(t *testing.T) {
+	repo := mkRepo(t)
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(filepath.Join(repo, ".ctx", "local")); err != nil {
+		t.Fatal(err)
+	}
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+		t.Fatalf("hydrate persisted core-only scaffold with implicit defaults: %v", err)
+	}
+	state, err := loadScaffoldState(filepath.Join(repo, ".ctx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(state.Config.Addons) != 0 {
+		t.Fatalf("hydration changed persisted add-ons to %v", state.Config.Addons)
+	}
+	if _, err := os.Stat(filepath.Join(repo, ".ctx", "local", "CONTINUE.md")); err != nil {
+		t.Fatalf("hydration did not restore continuation: %v", err)
 	}
 }
 
@@ -149,17 +229,52 @@ func TestInitCustomFolder(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(repo, ".agent", "INDEX.md")); err != nil {
 		t.Errorf(".agent/INDEX.md missing: %v", err)
 	}
-	idx, err := os.ReadFile(filepath.Join(repo, ".agent", "INDEX.md"))
+	readme, err := os.ReadFile(filepath.Join(repo, ".agent", "README.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(idx), "{{FOLDER}}") || !strings.Contains(string(idx), ".agent/") {
-		t.Errorf("custom folder was not rendered in INDEX.md")
+	if strings.Contains(string(readme), "{{FOLDER}}") || !strings.Contains(string(readme), ".agent/") {
+		t.Errorf("custom folder was not rendered in README.md")
 	}
 	if excluded, err := hasFolderExclusion(repo, ".agent"); err != nil {
 		t.Fatal(err)
 	} else if excluded {
 		t.Error("team-mode custom folder should not be excluded as a whole")
+	}
+}
+
+func TestInitWithAddonsRendersOnlySelectedRoutes(t *testing.T) {
+	repo := mkRepo(t)
+	if err := InitWithOptions(repo, InitOptions{
+		Folder: ".ctx",
+		Mode:   ModeTeam,
+		Addons: []string{"glossary,contracts", "glossary"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"context/contracts.md", "context/glossary.md"} {
+		if _, err := os.Stat(filepath.Join(repo, ".ctx", filepath.FromSlash(name))); err != nil {
+			t.Fatalf("selected add-on %s missing: %v", name, err)
+		}
+	}
+	if _, err := os.Lstat(filepath.Join(repo, ".ctx", "OPERATING.md")); !os.IsNotExist(err) {
+		t.Fatalf("unselected add-on was created: %v", err)
+	}
+	index, err := os.ReadFile(filepath.Join(repo, ".ctx", "INDEX.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"context/contracts.md", "context/glossary.md"} {
+		if !strings.Contains(string(index), name) {
+			t.Fatalf("INDEX missing selected route %s:\n%s", name, index)
+		}
+	}
+	state, err := loadScaffoldState(filepath.Join(repo, ".ctx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(state.Config.Addons, []string{"contracts", "glossary"}) {
+		t.Fatalf("persisted add-ons = %v", state.Config.Addons)
 	}
 }
 

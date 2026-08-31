@@ -42,9 +42,11 @@ func TestDoctorNoCtx(t *testing.T) {
 	}
 }
 
-func TestDoctorMissingVersion(t *testing.T) {
+func TestDoctorMissingLegacyVersion(t *testing.T) {
 	repo := mkRepo(t)
-	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
+	if err := Init(repo, ".ctx"); err != nil {
+		t.Fatal(err)
+	}
 	os.Remove(filepath.Join(repo, ".ctx", ".ctx-version"))
 	checks, _ := Doctor(repo, ".ctx")
 	if !anyFailed(checks) {
@@ -80,7 +82,7 @@ func TestDoctorUnbalancedMarkers(t *testing.T) {
 	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
 	readme, _ := os.ReadFile(filepath.Join(repo, ".ctx", "README.md"))
 	// Remove the first end marker -> unbalanced.
-	broken := strings.Replace(string(readme), managedEnd, "", 1)
+	broken := strings.Replace(string(readme), "<!-- ctx:managed end readme-platform -->", "", 1)
 	os.WriteFile(filepath.Join(repo, ".ctx", "README.md"), []byte(broken), 0o644)
 	checks, _ := Doctor(repo, ".ctx")
 	if !anyFailed(checks) {
@@ -91,7 +93,7 @@ func TestDoctorUnbalancedMarkers(t *testing.T) {
 func TestDoctorMissingExpectedFile(t *testing.T) {
 	repo := mkRepo(t)
 	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
-	os.Remove(filepath.Join(repo, ".ctx", "context", "glossary.md"))
+	os.Remove(filepath.Join(repo, ".ctx", "context", "caveats.md"))
 	checks, _ := Doctor(repo, ".ctx")
 	if !anyFailed(checks) {
 		t.Errorf("expected failure for missing expected file")

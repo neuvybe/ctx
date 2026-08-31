@@ -131,6 +131,34 @@ func TestUpdateRejectsSymlinkedVersionWithoutManagedMutation(t *testing.T) {
 	requireNoUpdateTemps(t, dest)
 }
 
+func TestRollbackDoesNotFollowSymlinkedOutputParent(t *testing.T) {
+	dest := t.TempDir()
+	outsideDir := t.TempDir()
+	outsidePath := filepath.Join(outsideDir, "review.md")
+	outsideBefore := []byte("published-looking external content\n")
+	writeUpdateSafetyFile(t, outsidePath, outsideBefore, 0o644)
+	outsideInfo, err := os.Stat(outsidePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := filepath.Join(dest, "workflows")
+	requireUpdateSafetySymlink(t, outsideDir, parent)
+	plans := []*updateOutput{{
+		name:         "workflows/review.md",
+		scaffoldRoot: dest,
+		path:         filepath.Join(parent, "review.md"),
+		content:      outsideBefore,
+		stagedInfo:   outsideInfo,
+		published:    true,
+	}}
+
+	err = rollbackPublishedUpdates(plans, errors.New("trigger rollback"))
+	if err == nil || !strings.Contains(err.Error(), "symbolic link") {
+		t.Fatalf("rollback error = %v, want parent-symlink refusal", err)
+	}
+	requireUpdateSafetyContents(t, outsidePath, outsideBefore)
+}
+
 func TestUpdateRejectsNonRegularOutputsWithoutPartialMutation(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -329,8 +357,8 @@ func TestPublishUpdateOutputsRollsBackEarlierReplacement(t *testing.T) {
 func newUpdateSafetyRepo(t *testing.T) (string, string) {
 	t.Helper()
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
-		t.Fatalf("InitWithOptions: %v", err)
+	if err := Init(repo, ".ctx"); err != nil {
+		t.Fatalf("Init: %v", err)
 	}
 	return repo, filepath.Join(repo, ".ctx")
 }

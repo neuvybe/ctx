@@ -1,70 +1,84 @@
 # Principles
 
-The five reusable principles encoded by `ctx`. The file structure is only the
-vehicle; the durable value is accurate context with a clear sharing boundary.
+`ctx` is useful when it reduces re-derivation without replacing source truth or
+the repository owner's authority. Layout v2 follows these principles.
 
-## 1. Share durable knowledge; keep session state local
+## 1. Share durable evidence; keep current state local
 
-Default **team mode** separates the two kinds of context:
+Project facts, routing, and deliberately selected team workflows are durable
+context. In team mode they are available for normal review and version control.
+The continuation file is different: it records one clone's current objective,
+working-tree position, verification, and next action, so it remains ignored.
 
-- Stable guidance and project reference docs (`OPERATING.md`, `INDEX.md`,
-  `REVIEW.md`, and `context/*.md`) live under `.ctx/` and are available for the
-  repository owner to review, stage, and commit.
-- The living session log lives at `.ctx/local/CONTINUE.md`. A scoped
-  `.ctx/.gitignore` ignores `local/`, so clone- and agent-specific state does not
-  enter shared history.
-- `ctx` never runs `git add` or `git commit`. It creates and updates files; the
-  user decides what becomes shared repository history.
+Local mode provides a stronger visibility choice by excluding the whole context
+folder through the repository's common `.git/info/exclude`. Ignored means absent
+from ordinary Git tracking; it does not mean encrypted or access-controlled.
 
-When all context must remain private, `ctx init --mode local` adds the whole
-selected folder to `.git/info/exclude`. This is repo-local and non-tracked; it
-does not modify the owner's root `.gitignore` or a machine-global excludes file.
+`ctx` creates and updates files but never stages or commits them. A human owns
+the sharing decision.
 
-Existing scaffolds from before team mode remain whole-folder local. Updates do
-not silently make them trackable or relocate their state; joining team mode will
-require an explicit future conversion flow.
+## 2. Keep the core small; choose specialized context deliberately
 
-Because `.git/info/exclude` is shared by linked worktrees, local mode is a
-repository-wide choice for a given folder. `ctx` refuses to initialize it when
-a sibling worktree has tracked content or uses team mode for that folder.
+Every project benefits from a concise overview, architecture map, confirmed
+caveats, router, and continuation state. Project-specific terms are common
+enough that new scaffolds select the glossary add-on by default, but it remains
+outside the fixed core and can be omitted when ordinary language is sufficient.
+Not every project has a formal extension API, compatibility-sensitive
+representations, a shared operating policy, or a review workflow.
 
-## 2. Constitution vs. log
+Layout v2 keeps those concerns in the add-on catalog. Apart from the
+default-selected glossary, add-ons are opt-in. Installed documents should earn
+their routing and maintenance cost rather than exist to complete an empty
+taxonomy.
 
-Keep **stable rules** (`OPERATING.md`) separate from **living state**
-(`local/CONTINUE.md`).
+## 3. Give each concern one owner and route hierarchically
 
-- `OPERATING.md` changes only when the work mode is ratified — it is the constitution.
-- `local/CONTINUE.md` changes every session — it is the private log (work mode,
-  last-completed, in-flight, proposed-next, parked concepts, decisions log).
+The index routes; it does not duplicate facts. Overview owns purpose and scope.
+Architecture owns components, flows, and invariants. Caveats owns confirmed
+limitations and operational gotchas. Optional fact documents own their narrower
+contracts, extension points, or terminology. Continuation owns local state only.
 
-Separating them makes iteration cheap: update local state without re-litigating
-the mode or generating shared churn. A compaction only costs re-reading
-`OPERATING.md` → `local/CONTINUE.md` → `INDEX.md`, plus the relevant
-`context/*.md` files.
+Agents should read parent summaries before specialized children and load only
+the branch relevant to the task. When detail outgrows a scannable document,
+split a coherent child and link it instead of expanding the mandatory load path.
 
-## 3. The owner's canonical instructions govern
+## 4. Make freshness and evidence visible
 
-Wherever the project owner puts canonical agent instructions (root `CLAUDE.md`,
-`AGENTS.md`, `.claude/skills/`, or `CONTRIBUTING`), **those take precedence**.
-`.ctx/OPERATING.md` is a session-discipline supplement, never an override. If the
-two conflict, the owner's rules win; surface the conflict rather than acting on
-it.
+A polished document can still be wrong. Every v2 project-fact document therefore
+states whether it is `draft`, `verified`, or `not-applicable`, the commit/date at
+which it was checked, and the source paths that support it.
 
-This makes `ctx` safe in repositories that already have owner-authored agent
-instructions: it complements rather than competes with them.
+`verified` is scoped evidence, not permanent authority. When relevant source
+moves, return the affected document to `draft`, reconcile it, and record the new
+verification point. Unknowns should remain explicit rather than being filled by
+plausible inference.
 
-## 4. Review findings are proposals, not patches
+## 5. Owner instructions govern; generated policy is optional
 
-Any second-agent review, such as the `codex review` pass in `REVIEW.md`, is
-**advisory**. Surface findings individually to the human for triage; only approved
-fixes are incorporated. Never silently mutate intent under the guise of fixing a
-finding.
+Canonical owner instructions such as `AGENTS.md`, `CLAUDE.md`,
+`CONTRIBUTING.md`, or owner-authored skills take precedence. The optional
+`operating` add-on begins as a draft supplement and should be ratified, trimmed,
+or removed. It must not manufacture approval gates or override an explicit
+higher-priority instruction.
 
-## 5. The value is the analysis, not the structure
+The same applies to review: ctx can supply a tool-neutral workflow shape, but the
+project owns when review is required, its base, its tools, and its acceptance
+criteria.
 
-`context/*.md` is useful only when it is accurate to the actual code. A blank
-template supplies shape; an agent must read the repository and write honest,
-verified docs for each category. `ctx` therefore ships a
-[`fill-context-workflow.md`](fill-context-workflow.md), not an auto-analyzer.
-Reconcile shared context when the repository moves. Stale context is worse than
-none, so verify source before relying on a detail in a build step.
+## 6. Separate structural health from content readiness
+
+`ctx doctor` answers structural questions: are the expected files/configuration
+coherent, are managed markers valid, and do effective Git boundaries match the
+selected mode?
+
+`ctx status` answers metadata questions: which fact documents remain draft,
+which were verified, which are intentionally not applicable, and which have
+grown large enough to reconsider their routing. These checks cannot establish
+factual truth; an agent must inspect source and tests.
+
+## 7. Preserve compatibility deliberately
+
+Existing v1 and config-less legacy scaffolds keep their original layout,
+continuation path, managed-marker grammar, and frozen update source. New design
+improvements do not justify silently moving private state, exposing files, or
+rewriting a user's established context contract.

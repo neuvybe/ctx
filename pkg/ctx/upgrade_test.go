@@ -10,8 +10,38 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
+
+func TestArchiveBinaryName(t *testing.T) {
+	tests := []struct {
+		goos string
+		want string
+	}{
+		{goos: "darwin", want: "ctx"},
+		{goos: "linux", want: "ctx"},
+		{goos: "windows", want: "ctx.exe"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.goos, func(t *testing.T) {
+			if got := archiveBinaryName(tt.goos); got != tt.want {
+				t.Fatalf("archiveBinaryName(%q) = %q, want %q", tt.goos, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDirectSelfUpgradeSupported(t *testing.T) {
+	if directSelfUpgradeSupported("windows") {
+		t.Fatal("Windows direct self-upgrade must remain disabled until a sidecar replacement strategy is implemented")
+	}
+	for _, goos := range []string{"darwin", "linux"} {
+		if !directSelfUpgradeSupported(goos) {
+			t.Fatalf("%s direct self-upgrade unexpectedly disabled", goos)
+		}
+	}
+}
 
 func TestPickAsset(t *testing.T) {
 	assets := []Asset{
@@ -129,8 +159,9 @@ func makeTarGz(t *testing.T, entries map[string]string) []byte {
 }
 
 func TestDownloadAndSwap(t *testing.T) {
+	binaryName := archiveBinaryName(runtime.GOOS)
 	tarball := makeTarGz(t, map[string]string{
-		"ctx":          "FAKE-BINARY-CONTENT-0.2.0",
+		binaryName:     "FAKE-BINARY-CONTENT-0.2.0",
 		"checksum.txt": "irrelevant",
 	})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +170,7 @@ func TestDownloadAndSwap(t *testing.T) {
 	defer srv.Close()
 
 	dir := t.TempDir()
-	currentBin := filepath.Join(dir, "ctx")
+	currentBin := filepath.Join(dir, binaryName)
 	if err := os.WriteFile(currentBin, []byte("OLD"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -161,13 +192,13 @@ func TestDownloadAndSwap(t *testing.T) {
 }
 
 func TestDownloadAndSwapMissingEntry(t *testing.T) {
-	tarball := makeTarGz(t, map[string]string{"other": "x"}) // no "ctx" entry
+	tarball := makeTarGz(t, map[string]string{"other": "x"})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(tarball)
 	}))
 	defer srv.Close()
 	dir := t.TempDir()
-	currentBin := filepath.Join(dir, "ctx")
+	currentBin := filepath.Join(dir, archiveBinaryName(runtime.GOOS))
 	os.WriteFile(currentBin, []byte("OLD"), 0o755)
 	if err := downloadAndSwap(context.Background(), srv.URL, currentBin); err == nil {
 		t.Errorf("expected error when archive has no ctx entry")

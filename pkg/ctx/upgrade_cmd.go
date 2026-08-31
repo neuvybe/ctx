@@ -12,9 +12,10 @@ func newUpgradeCmd() *cobra.Command {
 		Use:   "upgrade",
 		Short: "Upgrade the ctx CLI to the latest release",
 		Long: `Upgrade the ctx CLI to the latest GitHub release. For direct-binary installs
-it self-replaces the running binary from the matching OS/arch release asset.
-For package-manager installs (npm/brew/go install) it prints the right upgrade
-command instead, since those managers own the binary.`,
+on macOS and Linux, it self-replaces the running binary from the matching
+OS/arch release asset. Direct Windows installs receive safe manual/npm guidance
+because Windows cannot replace the running executable in place. Package-manager
+installs (npm/brew/go install) print the right manager-owned upgrade command.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			base := apiBase
 			if base == "" {

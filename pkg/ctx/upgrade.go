@@ -173,8 +173,23 @@ func isUnderGoBin(exe string) bool {
 	return strings.HasPrefix(exe, gb)
 }
 
+// archiveBinaryName returns the binary entry name used in release archives.
+func archiveBinaryName(goos string) string {
+	if goos == "windows" {
+		return "ctx.exe"
+	}
+	return "ctx"
+}
+
+func directSelfUpgradeSupported(goos string) bool {
+	// Windows keeps the running executable mapped, so replacing it in place is
+	// not a safe self-update strategy. Package-manager installs are handled
+	// before this check and remain fully supported.
+	return goos != "windows"
+}
+
 // extractBinaryFromTarGz extracts the entry named `name` from a tar.gz stream
-// (goreleaser archives the binary as `ctx`) and writes it to w.
+// and writes it to w.
 func extractBinaryFromTarGz(r io.Reader, w io.Writer, name string) error {
 	gz, err := gzip.NewReader(r)
 	if err != nil {
@@ -198,9 +213,9 @@ func extractBinaryFromTarGz(r io.Reader, w io.Writer, name string) error {
 	return fmt.Errorf("entry %q not found in archive", name)
 }
 
-// downloadAndSwap downloads the asset at assetURL (a tar.gz containing a `ctx`
-// binary), extracts it to a temp file next to currentBin, and atomically
-// replaces currentBin via os.Rename. The running process keeps the old inode.
+// downloadAndSwap downloads the asset at assetURL (a tar.gz containing the
+// platform's ctx binary), extracts it to a temp file next to currentBin, and atomically
+// replaces currentBin with the platform replacement primitive.
 func downloadAndSwap(ctx context.Context, assetURL, currentBin string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, assetURL, nil)
 	if err != nil {
@@ -221,7 +236,7 @@ func downloadAndSwap(ctx context.Context, assetURL, currentBin string) error {
 	}
 	tmpPath := tmp.Name()
 	defer func() { _ = os.Remove(tmpPath) }() // no-op on success (renamed away)
-	if err := extractBinaryFromTarGz(resp.Body, tmp, "ctx"); err != nil {
+	if err := extractBinaryFromTarGz(resp.Body, tmp, archiveBinaryName(runtime.GOOS)); err != nil {
 		_ = tmp.Close()
 		return err
 	}
@@ -231,7 +246,7 @@ func downloadAndSwap(ctx context.Context, assetURL, currentBin string) error {
 	if err := os.Chmod(tmpPath, 0o755); err != nil {
 		return err
 	}
-	return os.Rename(tmpPath, currentBin)
+	return atomicReplace(tmpPath, currentBin)
 }
 
 // UpgradeResult describes the outcome of an upgrade attempt.
@@ -254,6 +269,12 @@ func Upgrade(ctx context.Context, base string) (UpgradeResult, error) {
 		return UpgradeResult{Method: method, Message: "installed via brew; run `brew upgrade ctx`"}, nil
 	case "go-install":
 		return UpgradeResult{Method: method, Message: "installed via go install; run `go install github.com/neuvybe/ctx/cmd/ctx@latest`"}, nil
+	}
+	if !directSelfUpgradeSupported(runtime.GOOS) {
+		return UpgradeResult{
+			Method:  method,
+			Message: "direct self-upgrade is unavailable on Windows because a running executable cannot be replaced safely; install the latest release manually or run `npm i -g @neuvybe/ctx@latest`",
+		}, nil
 	}
 
 	rel, err := latestRelease(ctx, base)

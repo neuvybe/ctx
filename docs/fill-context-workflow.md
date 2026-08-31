@@ -1,102 +1,147 @@
 # Fill-context workflow
 
-How an agent produces accurate `context/*.md` for a target repository. The value
-of `.ctx/` is the analysis, not the file structure: a blank template is useless
-until an agent reads the repository and writes honest, verified documentation.
+This workflow turns a layout-v2 scaffold into useful, evidence-backed project
+context. The templates are prompts, not answers: an agent must inspect the
+actual repository and record what it verified, what remains draft, and what does
+not apply.
 
-## Know the scaffold mode
+## 1. Confirm the sharing boundary and selected scope
 
-- `ctx init` defaults to **team mode**. Durable docs under `.ctx/` are available
-  to share, while `.ctx/local/CONTINUE.md` is ignored by `.ctx/.gitignore`.
-- `ctx init --mode local` opts into a wholly private scaffold. The entire selected
-  folder is ignored through the target repository's `.git/info/exclude`.
-- `ctx` never stages or commits files in either mode. A human owns every decision
-  to add durable team docs to repository history.
-- Legacy pre-team scaffolds stay local. `ctx update` does not silently convert
-  their layout or visibility: their continuation remains at
-  `<folder>/CONTINUE.md`, while new scaffolds use
-  `<folder>/local/CONTINUE.md`. An explicit future conversion flow will be
-  needed.
-
-## Principles for the agent doing the filling
-
-- **Read the actual code; don't infer from commit messages or READMEs alone.**
-  Verify every claim against source before writing it.
-- **Reconcile against upstream before relying on a detail.** If the repository
-  has moved since a doc was written, the doc is stale; re-verify it.
-- **Note what you did not verify** rather than papering over it.
-- **Keep it scannable.** Each `context/*.md` should be loadable in one screen for
-  the relevant task.
-- **Respect the sharing boundary.** Durable project facts belong in the shared
-  docs in team mode; transient, machine-specific, or session state belongs only
-  in the configured continuation file (`local/CONTINUE.md` for new scaffolds,
-  root `CONTINUE.md` for legacy scaffolds).
-
-## Order of operations
-
-1. **Orient.** Read the root `README.md`, owner agent instructions (for example
-   root `CLAUDE.md`, `AGENTS.md`, or `.claude/skills/`), build files, dependency
-   manifests, and the top-level tree. Note the project's purpose, status, and the
-   owner's rules; those rules govern (see `principles.md` §3).
-2. **`context/overview.md` first** — the thesis, core mechanism, and what is not
-   here yet. This forces an understanding of the whole before the parts.
-3. **`context/architecture.md`** — end-to-end data flow, package responsibilities,
-   concurrency model, and integration paths. Read the entrypoints and trace one
-   full flow.
-4. **`context/format.md`** — data formats, storage boundaries, and compatibility
-   constraints. Read the relevant encoding, storage, and migration code.
-5. **`context/extending.md`** — project extension points and the conventions for
-   adding a new capability. Defer to an owner-authored authoritative guide
-   where one exists.
-6. **`context/known-issues.md`** — races, rough edges, build/tooling gotchas, and
-   test gaps. Run tests, build, and vet; distinguish environment failures from
-   product bugs.
-7. **`context/glossary.md`** — define every domain-specific term. Write this last.
-8. **`INDEX.md`** — distill repository orientation, load order, and hard-won
-   facts that will trip up the next agent.
-9. **`OPERATING.md`, the continuation file, and `REVIEW.md`** — customize
-   `OPERATING.md` to the project's support-function reality and seed the private
-   continuation with the initial completed-state entry. Its path is
-   `local/CONTINUE.md` in a new scaffold and root `CONTINUE.md` in a legacy one.
-
-## Per-category prompts
-
-Each generated `context/*.md` ships with prompts at the top. Answer them against
-the actual code, then delete the prompts and keep the answers. Do not leave the
-prompts in a filled context folder.
-
-## After filling
-
-Set `CTX_FOLDER` and `CTX_CONTINUE_PATH` before running the commands below. For
-a new default-folder scaffold:
+- `ctx init` defaults to **team mode**: durable files are available to review and
+  share, while `<folder>/local/CONTINUE.md` stays ignored.
+- `ctx init --mode local` keeps the whole selected folder ignored through the
+  repository's common `.git/info/exclude`.
+- `ctx` never stages or commits files in either mode.
+- The v2 core is intentionally small. New scaffolds select the glossary add-on
+  by default because project-specific language is commonly useful; omit it for
+  a core-only scaffold with `--without glossary`. Select other add-ons with
+  repeatable/comma-friendly `--with`, or install one later:
 
 ```bash
-export CTX_FOLDER=.ctx
-export CTX_CONTINUE_PATH="$CTX_FOLDER/local/CONTINUE.md"
+ctx init --without glossary
+ctx init --with operating,contracts
+ctx add --list
+ctx add review
 ```
 
-For a legacy scaffold, set
-`CTX_CONTINUE_PATH="$CTX_FOLDER/CONTINUE.md"` instead.
+Keep an add-on only when its concern is real. An empty document adds routing and
+maintenance cost without adding context; an installed glossary can instead be
+marked `not-applicable` with a reason if inspection shows ordinary language is
+sufficient.
 
-- Update `INDEX.md`'s staleness banner to “✅ reconciled to `<commit>`”.
-- Seed `$CTX_CONTINUE_PATH`: `Last completed` = “Generated context
-  from `<commit>`”; `In flight` = None; `Proposed next` = awaiting direction.
-- Run `ctx doctor --folder "$CTX_FOLDER"` and record any environment-dependent
-  verification caveats in `context/known-issues.md`, where `CTX_FOLDER` is the
-  selected folder (`.ctx` by default).
-- In **team mode**, review `git status --short "$CTX_FOLDER"` and present the
-  durable docs to the repository owner. Stage or commit them only when the human
-  explicitly chooses to do so. `$CTX_FOLDER/local/` remains ignored.
-- In **local mode**, commit nothing from the scaffold; the whole folder remains
-  private through `.git/info/exclude`.
+## 2. Read authority before context
 
-## When the repository moves
+Start with the repository's canonical owner instructions, such as `AGENTS.md`,
+`CLAUDE.md`, `CONTRIBUTING.md`, or an owner-authored skill. Those instructions
+govern. If the optional `OPERATING.md` is present, it is a project-owned
+supplement and must not duplicate or override higher-priority guidance.
+Replace `{{OWNER_INSTRUCTIONS_PATH}}` in README.md and INDEX.md with that
+canonical repo-relative path; the placeholder is intentionally owner-supplied.
 
-Re-read the affected code at the new `HEAD`, update the relevant durable docs,
-and stamp `INDEX.md` with the reconciled commit. Treat reconciliation as small,
-ordered increments and verify every changed claim against source.
+Then inspect the root README, manifests, build/test configuration, entrypoints,
+and top-level source tree. Commit messages and existing documentation are leads;
+verify important claims against current source.
 
-In team mode, these updates are ordinary candidate documentation changes, but
-`ctx` still never stages or commits them. In local mode and legacy scaffolds,
-they remain private unless and until the user explicitly chooses a supported
-future conversion path.
+## 3. Fill the core from parent summary to specialized detail
+
+1. **`context/overview.md`** — users, current purpose, capabilities, boundaries,
+   non-goals, maturity, and canonical roadmap pointers. Keep technical flow
+   detail out of this parent summary.
+2. **`context/architecture.md`** — components, entrypoints, important flows,
+   invariants, state ownership, lifecycle/concurrency where relevant, and active
+   runtime integrations. Cite source paths.
+3. **`context/caveats.md`** — confirmed limitations and gotchas that change how
+   an agent should work. Include evidence and a safe workaround; distinguish
+   product behavior from environment constraints. Do not create a speculative
+   bug backlog.
+4. **Fact add-ons** — fill the default-selected `glossary` plus `contracts` and
+   `extending` when installed. Use `not-applicable` with a reason if later
+   inspection proves an installed concern does not apply.
+5. **`INDEX.md`** — verify that routing names only installed documents and sends
+   readers to the smallest relevant set. Keep facts in their owning document,
+   not in the router.
+6. **`local/CONTINUE.md`** — record only current objective, repository position,
+   completed/in-flight work, verification, next action, blockers, and shared-doc
+   follow-ups. Durable discoveries belong in shared context or canonical project
+   records.
+
+If the `operating` or `review` add-on is installed, the repository owner should
+fill its project-owned policy/profile. Do not invent authorization rules, a base
+branch, review tools, or required checks.
+
+## 4. Maintain document metadata
+
+Every v2 project-fact document begins with one JSON line:
+
+```html
+<!-- ctx:doc {"status":"draft","verifiedAt":"","sources":[]} -->
+```
+
+Use it as follows:
+
+- `draft` — incomplete, inferred, or not yet checked at the current source.
+- `verified` — claims were checked; set `verifiedAt` to
+  `<commit-hash> @ YYYY-MM-DD` (use `git rev-parse HEAD`, never a mutable ref)
+  and list supporting repo-relative paths in `sources`.
+- `not-applicable` — the concern genuinely does not apply; retain a short reason
+  in the document so the status is intentional.
+
+Keep the line valid JSON. Record unknowns explicitly. Verification is scoped to
+the listed commit and sources; it is not a timeless guarantee.
+
+## 5. Keep context hierarchical and bounded
+
+Prefer a short parent summary that routes to detail. Link canonical documentation
+instead of copying it. Delete template instructions and inapplicable sections.
+Useful guidance targets are:
+
+| Document | Target |
+|---|---:|
+| `INDEX.md` | about 250 words |
+| `local/CONTINUE.md` | about 300 words |
+| `context/overview.md` | about 500 words |
+| Other project-fact documents (`context/**/*.md`) | about 800 words |
+
+These are guidance, not hard limits. For the listed mechanics and project-fact
+documents, `ctx status` emits non-failing warnings only around twice those sizes
+so legitimate project complexity is not marked unhealthy. When a file grows,
+split a coherent child document and route to it
+from INDEX's project-owned routing section rather than flattening all detail
+into the always-read path. Lifecycle updates preserve that section. Put the same
+`ctx:doc` metadata line on each nested project-fact Markdown document so status
+tracks it too.
+
+## 6. Check structure separately from readiness
+
+Run both checks after filling:
+
+```bash
+ctx doctor --folder .ctx
+ctx status --folder .ctx
+```
+
+`doctor` checks scaffold structure, layout/configuration, managed-marker
+grammar, and effective Git visibility/privacy. `status` summarizes metadata and
+size guidance. Neither proves that prose is true; source verification does.
+
+For a custom folder, repeat the same `--folder` value. In team mode, inspect
+`git status --short <folder>` and let the human decide what to stage. In local
+mode, commit nothing from the ignored scaffold.
+
+## 7. Reconcile when the repository moves
+
+For each affected fact document:
+
+1. change its status to `draft` while claims are being reconsidered;
+2. reread the changed source and relevant tests;
+3. update only the owning document and its child links;
+4. restore `verified` with the new commit/date and source list;
+5. update local continuation with any remaining work.
+
+## V1 compatibility
+
+Do not manually reshape an existing schema-v1 or config-less legacy scaffold to
+match this workflow. V1 retains its original file set, root continuation where
+applicable, unnamed managed markers, and frozen update templates. `ctx update`
+selects the compatible source; layout conversion requires an explicit supported
+flow rather than file moves by convention.

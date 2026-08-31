@@ -1,13 +1,14 @@
 # @neuvybe/ctx
 
-`ctx` gives coding agents durable project context that survives compaction. By
-default, it creates a **team scaffold**: stable guidance and reference docs are
-available to track, while the living session log at `.ctx/local/CONTINUE.md` is
-ignored through `.ctx/.gitignore`.
+`ctx` gives coding agents durable, project-specific context that survives
+compaction. New scaffolds use layout v2: a small core of evidence-tracked project
+facts, a hierarchical index, and an ignored local continuation file. The
+glossary add-on is selected by default; other add-ons stay opt-in.
 
-Use `--mode local` when the entire scaffold should remain private through the
-target repository's `.git/info/exclude`. In either mode, the CLI never stages or
-commits files.
+Team mode is the default. Durable context is available to review and commit,
+while `.ctx/local/CONTINUE.md` stays ignored. `--mode local` keeps the entire
+scaffold private through the repository's common `.git/info/exclude`. `ctx`
+never stages or commits files.
 
 ## Install
 
@@ -16,10 +17,9 @@ npm install -g @neuvybe/ctx
 ctx --version
 ```
 
-The postinstall step fetches the matching OS/architecture `ctx` binary from the
-[GitHub release](https://github.com/neuvybe/ctx/releases) for this package's
-version and extracts it next to the package. If the fetch fails, it warns without
-breaking `npm install`; fall back to:
+The postinstall step fetches the matching binary from the package version's
+[GitHub release](https://github.com/neuvybe/ctx/releases). If that download is
+unavailable, install with:
 
 ```bash
 go install github.com/neuvybe/ctx/cmd/ctx@latest
@@ -28,56 +28,49 @@ go install github.com/neuvybe/ctx/cmd/ctx@latest
 ## Initialize
 
 ```bash
-# default: shareable durable docs + ignored local session state
+# Team-mode v2 core plus glossary
 ctx init /path/to/repo
 
-# opt in to a wholly private context folder
+# Core only
+ctx init /path/to/repo --without glossary
+
+# Whole-folder private
 ctx init /path/to/repo --mode local
 
-# custom folder name
-ctx init /path/to/repo --folder .agent
+# Add focused context at creation
+ctx init /path/to/repo --with operating,contracts
+
+# Inspect or extend an existing v2 scaffold
+ctx add --list
+ctx add /path/to/repo review
 ```
 
-For `ctx init`, `--folder` must be one top-level directory name containing only
-letters, digits, `.`, `_`, or `-`. Nested paths such as `docs/ctx` and names
-containing spaces are not supported.
+`glossary` remains an add-on so projects can omit it with `--without glossary`,
+but new scaffolds select it by default. `--with` and `--without` are repeatable
+and comma-friendly. The other available add-ons are `operating`, `contracts`,
+`extending`, and `review`.
 
-Team mode writes the selected folder's `.gitignore` so its
-`local/CONTINUE.md` remains local. All other scaffold files are available for
-the user to review, stage, and commit. `ctx` itself does not run `git add` or
-`git commit`.
+For new initialization, `--folder` accepts one top-level name containing only
+letters, digits, `.`, `_`, or `-`. Repeat a custom `--folder` with later
+commands. On a fresh clone with committed team context, rerun `ctx init` to
+hydrate only the ignored continuation file.
 
-After cloning committed team context, run `ctx init` again (repeating
-`--folder`, if customized). It creates only the missing ignored continuation;
-durable files are left unchanged. Custom-folder users must also repeat
-`--folder <name>` with `update` and `doctor`.
+## Health and readiness
 
-Local mode adds the whole selected folder to `.git/info/exclude`; it never edits
-the repository's root `.gitignore`. That exclude is shared by linked worktrees,
-so `ctx` rejects local initialization when a sibling worktree has tracked
-content or a team scaffold for the same folder.
+- `ctx doctor` checks structure, layout compatibility, managed markers, and Git
+  boundaries.
+- `ctx status` summarizes `draft` / `verified` / `not-applicable` metadata,
+  flags listed sources changed since verification, and gives non-failing size
+  guidance; it cannot verify truth or source sufficiency.
+- `ctx update` refreshes compatible named managed blocks without touching local
+  continuation state.
 
-## Commands
+Existing schema-v1 and config-less legacy scaffolds stay on their frozen v1
+layout/update path; ctx does not silently relocate their root `CONTINUE.md`,
+change unnamed markers, or expose private context.
 
-- `ctx init [target] [--folder .ctx] [--mode team|local]` — scaffold context;
-  team mode is the default.
-- `ctx update [target] [--folder .ctx]` — refresh managed blocks in `README.md` and `REVIEW.md`,
-  preserve user content and sharing mode, and leave `local/CONTINUE.md` alone.
-- `ctx doctor [target] [--folder .ctx]` — validate the scaffold, version stamp, ignore policy,
-  placeholders, managed markers, and expected files.
-- `ctx upgrade` — self-replace a direct binary from the latest GitHub release or
-  print the right command for npm, Homebrew, or Go installs.
-- `ctx --version` — print the installed version.
-
-## Legacy scaffolds
-
-Existing pre-team-mode scaffolds remain wholly local. `ctx update` does not
-silently move their `<folder>/CONTINUE.md` to the new
-`<folder>/local/CONTINUE.md` path or make their durable docs trackable; an
-explicit future conversion flow will be required to opt them into team mode.
-
-See the [ctx 0.2 migration guide](https://github.com/neuvybe/ctx/blob/main/docs/migrations/0.2-team-mode.md)
-for the default change, compatibility behavior, and opt-out command.
-
-See the [project README](https://github.com/neuvybe/ctx#readme) for the full
-design and principles.
+See the [project README](https://github.com/neuvybe/ctx#readme),
+[layout v2 guide](https://github.com/neuvybe/ctx/blob/main/docs/layout-v2.md),
+[fill workflow](https://github.com/neuvybe/ctx/blob/main/docs/fill-context-workflow.md),
+[team-mode migration](https://github.com/neuvybe/ctx/blob/main/docs/migrations/0.2-team-mode.md),
+and [layout-v2 migration](https://github.com/neuvybe/ctx/blob/main/docs/migrations/0.3-layout-v2.md).

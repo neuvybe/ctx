@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestInitWithOptionsTeamMode(t *testing.T) {
@@ -44,6 +45,43 @@ func TestInitWithOptionsTeamMode(t *testing.T) {
 	}
 	if modeTestHasWholeFolderExclude(t, repo, ".ctx") {
 		t.Error("team mode added a whole-folder .ctx entry to .git/info/exclude")
+	}
+}
+
+func TestTeamInitRechecksVisibilityAfterStaging(t *testing.T) {
+	repo := modeTestGitRepo(t)
+	mutated := make(chan error, 1)
+	go func() {
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			entries, err := os.ReadDir(repo)
+			if err != nil {
+				mutated <- err
+				return
+			}
+			for _, entry := range entries {
+				if entry.IsDir() && strings.HasPrefix(entry.Name(), ".ctx-init-") {
+					mutated <- os.WriteFile(filepath.Join(repo, ".gitignore"), []byte("/.ctx/\n"), 0o644)
+					return
+				}
+			}
+			time.Sleep(100 * time.Microsecond)
+		}
+		mutated <- errors.New("timed out waiting for init staging directory")
+	}()
+
+	err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
+	if mutateErr := <-mutated; mutateErr != nil {
+		t.Fatal(mutateErr)
+	}
+	if err == nil || !strings.Contains(err.Error(), "postcondition") {
+		t.Fatalf("team init error = %v, want post-publication visibility failure", err)
+	}
+	if _, statErr := os.Lstat(filepath.Join(repo, ".ctx")); !errors.Is(statErr, os.ErrNotExist) {
+		t.Fatalf("failed team init left published scaffold: %v", statErr)
+	}
+	if leftovers, globErr := filepath.Glob(filepath.Join(repo, ".ctx-init-*")); globErr != nil || len(leftovers) != 0 {
+		t.Fatalf("failed team init left staging paths: %v (err=%v)", leftovers, globErr)
 	}
 }
 
@@ -133,14 +171,14 @@ func TestDoctorTeamChecksEverySharedAndLocalFile(t *testing.T) {
 	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(repo, ".gitignore"), []byte("/.ctx/REVIEW.md\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(repo, ".gitignore"), []byte("/.ctx/INDEX.md\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	checks, err := Doctor(repo, ".ctx")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !hasFailedCheckContaining(checks, "shared context Git-visible", ".ctx/REVIEW.md") {
+	if !hasFailedCheckContaining(checks, "shared context Git-visible", ".ctx/INDEX.md") {
 		t.Fatalf("Doctor did not report ignored shared file: %+v", checks)
 	}
 
@@ -235,6 +273,71 @@ func TestDoctorRejectsVisibleLocalDirectory(t *testing.T) {
 	}
 }
 
+func TestInitializedLocalPostconditionRejectsVisibleDirectoryAndFutureFiles(t *testing.T) {
+	repo := modeTestGitRepo(t)
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeLocal}); err != nil {
+		t.Fatal(err)
+	}
+	rules := "!/.ctx/\n/.ctx/*\n!/.ctx/future-secret.txt\n"
+	if err := os.WriteFile(filepath.Join(repo, ".gitignore"), []byte(rules), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	state, err := loadScaffoldState(filepath.Join(repo, ".ctx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = verifyInitializedScaffold(repo, filepath.Join(repo, ".ctx"), ".ctx", state)
+	if err == nil || !strings.Contains(err.Error(), "as a directory") {
+		t.Fatalf("local postcondition error = %v, want visible-directory failure", err)
+	}
+}
+
+func TestHydrationCleanupPreservesReplacementDirectory(t *testing.T) {
+	root := t.TempDir()
+	localDir := filepath.Join(root, "local")
+	if err := os.Mkdir(localDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	createdInfo, err := os.Lstat(localDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	moved := filepath.Join(root, "local-created-by-ctx")
+	if err := os.Rename(localDir, moved); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(localDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	removeHydrationLocalDirectory(localDir, createdInfo)
+
+	info, err := os.Lstat(localDir)
+	if err != nil {
+		t.Fatalf("cleanup removed a replacement directory: %v", err)
+	}
+	if !info.IsDir() || info.Mode().Perm() != 0o700 {
+		t.Fatalf("replacement directory changed: mode %v", info.Mode())
+	}
+}
+
+func TestHydrationCleanupRemovesOwnedEmptyDirectory(t *testing.T) {
+	localDir := filepath.Join(t.TempDir(), "local")
+	if err := os.Mkdir(localDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	createdInfo, err := os.Lstat(localDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	removeHydrationLocalDirectory(localDir, createdInfo)
+
+	if _, err := os.Lstat(localDir); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("owned empty hydration directory was not removed: %v", err)
+	}
+}
+
 func TestInitHydratesFreshTeamCloneLocalStateOnly(t *testing.T) {
 	repo := modeTestGitRepo(t)
 	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
@@ -262,6 +365,69 @@ func TestInitHydratesFreshTeamCloneLocalStateOnly(t *testing.T) {
 	}
 	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err == nil {
 		t.Fatal("team init overwrote an already-hydrated scaffold")
+	}
+}
+
+func TestSchemaV1HydrationPreservesRenderedProjectAfterCloneRename(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		crlf bool
+	}{
+		{name: "LF"},
+		{name: "CRLF", crlf: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			root := t.TempDir()
+			original := filepath.Join(root, "original-project")
+			if err := os.Mkdir(original, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			modeTestGitInit(t, original)
+			if err := Init(original, ".ctx"); err != nil {
+				t.Fatalf("legacy Init: %v", err)
+			}
+			dest := filepath.Join(original, ".ctx")
+			if err := os.Remove(filepath.Join(dest, "CONTINUE.md")); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dest, ".gitignore"), []byte("/local/\n**/.ctx-update-*\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := writeConfig(dest, ModeTeam); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(original, ".git", "info", "exclude"), nil, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if tt.crlf {
+				for _, name := range []string{"README.md", "INDEX.md"} {
+					path := filepath.Join(dest, name)
+					content, err := os.ReadFile(path)
+					if err != nil {
+						t.Fatal(err)
+					}
+					content = []byte(strings.ReplaceAll(string(content), "\n", "\r\n"))
+					if err := os.WriteFile(path, content, 0o644); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+
+			renamed := filepath.Join(root, "renamed-clone")
+			if err := os.Rename(original, renamed); err != nil {
+				t.Fatal(err)
+			}
+			if err := InitWithOptions(renamed, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+				t.Fatalf("hydrate renamed schema-v1 clone: %v", err)
+			}
+			continuation, err := os.ReadFile(filepath.Join(renamed, ".ctx", "local", "CONTINUE.md"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(continuation), "for original-project") || strings.Contains(string(continuation), "for renamed-clone") {
+				t.Fatalf("hydrated continuation changed project identity:\n%s", continuation)
+			}
+		})
 	}
 }
 
@@ -544,22 +710,10 @@ func TestLocalModeRejectsTeamScaffoldInSiblingWorktree(t *testing.T) {
 
 func TestLegacyLocalScaffoldStaysLegacy(t *testing.T) {
 	repo := modeTestGitRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeLocal}); err != nil {
+	if err := Init(repo, ".ctx"); err != nil {
 		t.Fatal(err)
 	}
 	dest := filepath.Join(repo, ".ctx")
-	if err := os.Rename(filepath.Join(dest, "local", "CONTINUE.md"), filepath.Join(dest, "CONTINUE.md")); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.RemoveAll(filepath.Join(dest, "local")); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Remove(filepath.Join(dest, "config.json")); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Remove(filepath.Join(dest, ".gitignore")); err != nil {
-		t.Fatal(err)
-	}
 
 	state, err := loadScaffoldState(dest)
 	if err != nil {

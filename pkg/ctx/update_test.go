@@ -106,7 +106,7 @@ func TestUpdateManagedContentNoMarkersUnchanged(t *testing.T) {
 
 func TestUpdateRefreshesManagedAndPreservesUserFill(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+	if err := Init(repo, ".ctx"); err != nil {
 		t.Fatal(err)
 	}
 	readmePath := filepath.Join(repo, ".ctx", "README.md")
@@ -154,7 +154,7 @@ func TestUpdateNoCtxErrors(t *testing.T) {
 
 func TestUpdateSkipsUserOwnedFile(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+	if err := Init(repo, ".ctx"); err != nil {
 		t.Fatal(err)
 	}
 	readmePath := filepath.Join(repo, ".ctx", "README.md")
