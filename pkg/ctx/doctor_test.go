@@ -18,7 +18,7 @@ func anyFailed(checks []Check) bool {
 
 func TestDoctorHealthy(t *testing.T) {
 	repo := mkRepo(t)
-	if err := Init(repo, ".ctx"); err != nil {
+	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatal(err)
 	}
 	checks, err := Doctor(repo, ".ctx")
@@ -44,7 +44,7 @@ func TestDoctorNoCtx(t *testing.T) {
 
 func TestDoctorMissingVersion(t *testing.T) {
 	repo := mkRepo(t)
-	Init(repo, ".ctx")
+	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
 	os.Remove(filepath.Join(repo, ".ctx", ".ctx-version"))
 	checks, _ := Doctor(repo, ".ctx")
 	if !anyFailed(checks) {
@@ -54,7 +54,7 @@ func TestDoctorMissingVersion(t *testing.T) {
 
 func TestDoctorMissingExclude(t *testing.T) {
 	repo := mkRepo(t)
-	Init(repo, ".ctx")
+	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeLocal})
 	// Rewrite exclude without the .ctx line.
 	os.WriteFile(filepath.Join(repo, ".git", "info", "exclude"), []byte("# empty\n"), 0o644)
 	checks, _ := Doctor(repo, ".ctx")
@@ -65,7 +65,7 @@ func TestDoctorMissingExclude(t *testing.T) {
 
 func TestDoctorLeftoverPlaceholder(t *testing.T) {
 	repo := mkRepo(t)
-	Init(repo, ".ctx")
+	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
 	// Inject a leftover {{PROJECT}} into a context doc.
 	os.WriteFile(filepath.Join(repo, ".ctx", "context", "overview.md"),
 		[]byte("# {{PROJECT}} leftover\n"), 0o644)
@@ -77,7 +77,7 @@ func TestDoctorLeftoverPlaceholder(t *testing.T) {
 
 func TestDoctorUnbalancedMarkers(t *testing.T) {
 	repo := mkRepo(t)
-	Init(repo, ".ctx")
+	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
 	readme, _ := os.ReadFile(filepath.Join(repo, ".ctx", "README.md"))
 	// Remove the first end marker -> unbalanced.
 	broken := strings.Replace(string(readme), managedEnd, "", 1)
@@ -90,7 +90,7 @@ func TestDoctorUnbalancedMarkers(t *testing.T) {
 
 func TestDoctorMissingExpectedFile(t *testing.T) {
 	repo := mkRepo(t)
-	Init(repo, ".ctx")
+	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
 	os.Remove(filepath.Join(repo, ".ctx", "context", "glossary.md"))
 	checks, _ := Doctor(repo, ".ctx")
 	if !anyFailed(checks) {

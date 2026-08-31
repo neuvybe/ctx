@@ -1,9 +1,9 @@
-# CONTINUE.md — continuation prompt (living state) for {{PROJECT}}
+# CONTINUE.md — local continuation prompt (living state) for {{PROJECT}}
 
 > **Purpose:** load this into a fresh agent after a compaction so it can resume
-> without re-deriving context. This is the **living** file — update it at the
-> end of every exchange. The *rules* live in `OPERATING.md`; this file holds
-> *where we are*.
+> without re-deriving context. This is machine-local state at
+> `{{FOLDER}}/{{CONTINUE_PATH}}`; it is ignored even when the durable context is
+> shared in team mode. The stable rules live in `OPERATING.md`.
 
 ---
 
@@ -11,12 +11,12 @@
 
 1. Read in this order: `OPERATING.md` (binding mode) → this file (current state)
    → `INDEX.md` (repo orientation + load order) → the specific `context/*.md`
-   docs relevant to the next step. All under `.ctx/`.
+   docs relevant to the next step. All paths are under `{{FOLDER}}/`.
 2. Recall the hierarchy: the owner's canonical instructions
    ({{OWNER_INSTRUCTIONS_PATH}}) govern repo work and take precedence over
    `OPERATING.md` (see `OPERATING.md` §0a). Owner/founder: {{FOUNDER}};
    collaborator on this machine: {{COLLABORATOR}}.
-3. State the current state back to the director in 2–3 lines: mode, last done,
+3. State the current state back to the director in 2–3 lines: work mode, last done,
    in-flight, proposed next (from the sections below).
 4. Default to **build mode, stopped, awaiting direction** — unless the state
    below says otherwise, do not implement anything. Propose the next smallest
@@ -29,7 +29,7 @@ checkpoint, not a work session.
 
 ---
 
-## Mode
+## Work mode
 
 Current: **build mode, default stopped.** (Set to exploration when the design
 space is open and the director asks for options.)
@@ -38,10 +38,10 @@ space is open and the director asks for options.)
 
 ## Last completed
 
-- **Generated `.ctx/` context** from `<commit>` on {{DATE}} (initial scaffold
-  via the `ctx` platform; `context/*.md` filled per `docs/fill-context-workflow`
-  of the platform). Replace this with the real first completed step once work
-  begins.
+- **Generated `{{FOLDER}}/` context** from `<commit>` on {{DATE}} (initial
+  scaffold via the `ctx` platform; `context/*.md` filled per the platform's
+  fill-context workflow). Replace this with the real first completed step once
+  work begins.
 
 ## In flight
 
@@ -62,9 +62,9 @@ space is open and the director asks for options.)
 
 ## Decisions log (compact, append-only)
 
-- {{DATE}} — `.ctx/` scaffolded via the `ctx` platform; ignored via
-  `.git/info/exclude` (repo-local, non-tracked). Owner instructions at
-  {{OWNER_INSTRUCTIONS_PATH}} govern; `OPERATING.md` is a supplement.
+- {{DATE}} — `{{FOLDER}}/` scaffolded via the `ctx` platform in {{MODE}} visibility mode.
+  Owner instructions at {{OWNER_INSTRUCTIONS_PATH}} govern; `OPERATING.md` is a
+  supplement.
 
 ---
 
@@ -72,7 +72,7 @@ space is open and the director asks for options.)
 
 Keep it honest and short. A stale continuation file is worse than none.
 
-- **Mode:** build/exploration as directed.
+- **Work mode:** build/exploration as directed.
 - **Last completed:** move the just-finished step here (one line).
 - **In flight:** almost always "None."
 - **Proposed next:** the next smallest step awaiting approval, or "Awaiting

@@ -3,8 +3,8 @@
 <!-- ctx:managed begin -->
 > **Purpose:** a lightweight, second-agent review loop using `codex review`
 > (ChatGPT-authed) to get quick adversarial feedback on a change **before**
-> opening a PR. A *session workflow* (private to `.ctx/`), not tracked repo
-> infra. No owner approval needed; nothing committed. Findings are **proposals**
+> opening a PR. In team mode this is shared review guidance, not automated repo
+> infrastructure. Findings are **proposals**
 > (per `OPERATING.md` §7), not auto-applied patches.
 
 ## When to run it
@@ -54,9 +54,9 @@ For a big/hard diff, swap `high` → `xhigh` / `max` / `ultra`. Capture with
 
 ## Scope & safety notes
 
-- **Diff-scoped, so private context is safe:** `--commit`/`--base`/`--uncommitted`
-  review *git* changes, so `.ctx/` (gitignored) and other ignored paths are not
-  in the reviewed diff.
+- **Diff-scoped:** `--commit`/`--base`/`--uncommitted` review Git changes. In
+  team mode, edits to shared `{{FOLDER}}/` files are therefore part of the
+  review; `{{FOLDER}}/{{CONTINUE_PATH}}` remains ignored.
 - **Exploratory noise is benign:** the review agent may run exploratory
   `rg`/`grep` and list files under build/cache dirs. That's exploration, not the
   verdict — ignore it. The verdict is the natural-language summary at the end.

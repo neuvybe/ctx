@@ -1,7 +1,6 @@
 package ctx
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -29,7 +28,7 @@ command instead, since those managers own the binary.`,
 				return err
 			}
 			if res.Message != "" {
-				fmt.Println(res.Message)
+				cmdPrintf(cmd, "%s\n", res.Message)
 			}
 			return nil
 		},

@@ -1,67 +1,70 @@
 # Principles
 
-The five reusable principles encoded by `ctx`. These are the hard-won parts —
-the file structure is just the vehicle.
+The five reusable principles encoded by `ctx`. The file structure is only the
+vehicle; the durable value is accurate context with a clear sharing boundary.
 
-## 1. Private context uses `.git/info/exclude`, never the repo's `.gitignore`
+## 1. Share durable knowledge; keep session state local
 
-A collaborator's working context (session state, private notes, the operating
-mode) is **private and repo-local**. Ignore it via the target repo's
-`.git/info/exclude` — **not** the repo's `.gitignore`.
+Default **team mode** separates the two kinds of context:
 
-- **Why not `.gitignore`:** that's the project owner's tracked file; editing it
-  is a PR the owner reviews, and it pollutes the shared repo with your personal
-  tooling.
-- **Why not a global `core.excludesFile`:** that's machine-global and affects
-  every repo; `.git/info/exclude` is repo-scoped, zero side-effects, and
-  survives syncing to `origin/main` (unlike a folder that's only ignored on one
-  branch).
-- **Never collide with the owner's tracked instruction namespace** (root
-  `CLAUDE.md`, `AGENTS.md`, `.claude/skills/`). Pick a folder name the owner
-  isn't using (`.ctx` default; configurable).
+- Stable guidance and project reference docs (`OPERATING.md`, `INDEX.md`,
+  `REVIEW.md`, and `context/*.md`) live under `.ctx/` and are available for the
+  repository owner to review, stage, and commit.
+- The living session log lives at `.ctx/local/CONTINUE.md`. A scoped
+  `.ctx/.gitignore` ignores `local/`, so clone- and agent-specific state does not
+  enter shared history.
+- `ctx` never runs `git add` or `git commit`. It creates and updates files; the
+  user decides what becomes shared repository history.
 
-**Clone-local caveat:** `.git/info/exclude` doesn't follow the repo to a fresh
-clone. For personal/session context that's appropriate. On re-clone, re-run
-`init` (or keep your `.ctx/` copied elsewhere).
+When all context must remain private, `ctx init --mode local` adds the whole
+selected folder to `.git/info/exclude`. This is repo-local and non-tracked; it
+does not modify the owner's root `.gitignore` or a machine-global excludes file.
+
+Existing scaffolds from before team mode remain whole-folder local. Updates do
+not silently make them trackable or relocate their state; joining team mode will
+require an explicit future conversion flow.
+
+Because `.git/info/exclude` is shared by linked worktrees, local mode is a
+repository-wide choice for a given folder. `ctx` refuses to initialize it when
+a sibling worktree has tracked content or uses team mode for that folder.
 
 ## 2. Constitution vs. log
 
 Keep **stable rules** (`OPERATING.md`) separate from **living state**
-(`CONTINUE.md`).
+(`local/CONTINUE.md`).
 
-- `OPERATING.md` changes only when the mode is ratified — it's the constitution.
-- `CONTINUE.md` changes every session — it's the log (mode, last-completed,
-  in-flight, proposed-next, parked-concepts, decisions-log).
+- `OPERATING.md` changes only when the work mode is ratified — it is the constitution.
+- `local/CONTINUE.md` changes every session — it is the private log (work mode,
+  last-completed, in-flight, proposed-next, parked concepts, decisions log).
 
-Separating them means iteration is cheap: you update state without re-litigating
-the mode. A compaction only costs re-reading the three governing files
-(`OPERATING` + `CONTINUE` + `INDEX`) plus 1–2 relevant `context/*.md` — not the
-whole folder.
+Separating them makes iteration cheap: update local state without re-litigating
+the mode or generating shared churn. A compaction only costs re-reading
+`OPERATING.md` → `local/CONTINUE.md` → `INDEX.md`, plus the relevant
+`context/*.md` files.
 
 ## 3. The owner's canonical instructions govern
 
 Wherever the project owner puts canonical agent instructions (root `CLAUDE.md`,
-`AGENTS.md`, `.claude/skills/`, a `CONTRIBUTING`), **those take precedence**.
-`.ctx/OPERATING.md` is the collaborator's *session-discipline supplement*,
-layered on top — never an override. If the two conflict, the owner's rules win;
-surface the conflict rather than acting on it.
+`AGENTS.md`, `.claude/skills/`, or `CONTRIBUTING`), **those take precedence**.
+`.ctx/OPERATING.md` is a session-discipline supplement, never an override. If the
+two conflict, the owner's rules win; surface the conflict rather than acting on
+it.
 
-This is what makes `ctx` safe to drop into a repo that already has owner-authored
-agent instructions: it complements, doesn't compete.
+This makes `ctx` safe in repositories that already have owner-authored agent
+instructions: it complements rather than competes with them.
 
 ## 4. Review findings are proposals, not patches
 
-Any second-agent review (e.g. the `codex review` pre-PR pass in `REVIEW.md`) is
-**advisory**: findings are surfaced per-finding to the human, who triages. Only
-approved fixes get incorporated. Never let a reviewer silently mutate intent
-under the guise of "fixing." (`OPERATING.md` codifies this; `REVIEW.md` is the
-concrete pass.)
+Any second-agent review, such as the `codex review` pass in `REVIEW.md`, is
+**advisory**. Surface findings individually to the human for triage; only approved
+fixes are incorporated. Never silently mutate intent under the guise of fixing a
+finding.
 
 ## 5. The value is the analysis, not the structure
 
-`context/*.md` is only useful when it's **accurate to the actual code**. A blank
-template gives you the shape; an agent has to read the repo and write honest,
-verified docs per category. So `ctx` ships a **fill-context workflow**
-([`fill-context-workflow.md`](fill-context-workflow.md)), not an auto-analyzer.
-Reconcile docs against upstream when the repo moves; stale context is worse than
-none — verify against source before relying on a detail in a build step.
+`context/*.md` is useful only when it is accurate to the actual code. A blank
+template supplies shape; an agent must read the repository and write honest,
+verified docs for each category. `ctx` therefore ships a
+[`fill-context-workflow.md`](fill-context-workflow.md), not an auto-analyzer.
+Reconcile shared context when the repository moves. Stale context is worse than
+none, so verify source before relying on a detail in a build step.

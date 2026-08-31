@@ -20,31 +20,42 @@ release-build:
 test:
 	go test -race ./...
 
-# Smoke-test ctx init/update/doctor against a throwaway repo.
+# Smoke-test team/local init plus update/doctor against throwaway repos.
 smoke: build
-	@tmp=$$(mktemp -d); \
-	git init -q "$$tmp/proj"; \
-	echo "--- ctx --version ---"; ./bin/$(BINARY) --version; \
-	echo "--- ctx init ---"; ./bin/$(BINARY) init "$$tmp/proj" | head -1; \
-	echo "--- files ---"; find "$$tmp/proj/.ctx" -type f | sort; \
-	echo "--- version stamp ---"; cat "$$tmp/proj/.ctx/.ctx-version"; \
-	echo "--- exclude ---"; tail -3 "$$tmp/proj/.git/info/exclude"; \
-	echo "--- init-substituted placeholders left? (should be none) ---"; grep -rl '{{PROJECT}}\|{{DATE}}' "$$tmp/proj/.ctx" || echo "(none — good)"; \
-	echo "--- idempotency (re-run refuses) ---"; ./bin/$(BINARY) init "$$tmp/proj" 2>&1 | tail -1; \
-	echo "--- ctx doctor (healthy) ---"; ./bin/$(BINARY) doctor "$$tmp/proj" 2>&1 | tail -3; \
-	echo "--- set user fill + corrupt a managed line ---"; \
-	R="$$tmp/proj/.ctx/README.md"; \
-	perl -pi -e 's/\{\{OWNER_INSTRUCTIONS_PATH\}\}/OWNERPATH-XYZ/' "$$R"; \
-	perl -pi -e 's/It is gitignored via/CORRUPTED-MANAGED HERE/' "$$R"; \
-	echo "--- ctx update ---"; ./bin/$(BINARY) update "$$tmp/proj" 2>&1; \
-	echo "user fill preserved: $$(grep -c OWNERPATH-XYZ "$$R") (want 1)"; \
-	echo "corruption gone: $$(grep -c CORRUPTED-MANAGED "$$R") (want 0)"; \
-	echo "managed restored: $$(grep -c 'It is gitignored via' "$$R") (want 1)"; \
-	echo "--- ctx doctor (healthy, post-update) ---"; ./bin/$(BINARY) doctor "$$tmp/proj" >/dev/null 2>&1; echo "doctor exit=$$? (0=healthy)"; \
-	echo "--- doctor catches unbalanced markers ---"; \
-	perl -pi -e 's/<!-- ctx:managed end -->// if !$$done' "$$R"; \
-	./bin/$(BINARY) doctor "$$tmp/proj" >/dev/null 2>&1; echo "doctor exit=$$? (non-zero expected)"; \
-	rm -rf "$$tmp"
+	@set -eu; \
+	ctx_smoke_tmp=$$(mktemp -d); \
+	trap 'rm -rf "$$ctx_smoke_tmp"' EXIT; \
+	git init -q "$$ctx_smoke_tmp/team"; \
+	./bin/$(BINARY) init "$$ctx_smoke_tmp/team" >"$$ctx_smoke_tmp/team-init.out" 2>"$$ctx_smoke_tmp/team-init.err"; \
+	test -s "$$ctx_smoke_tmp/team-init.out"; \
+	test ! -s "$$ctx_smoke_tmp/team-init.err"; \
+	test -f "$$ctx_smoke_tmp/team/.ctx/config.json"; \
+	test -f "$$ctx_smoke_tmp/team/.ctx/local/CONTINUE.md"; \
+	git -C "$$ctx_smoke_tmp/team" check-ignore -q .ctx/local/CONTINUE.md; \
+	if git -C "$$ctx_smoke_tmp/team" check-ignore -q .ctx/README.md; then exit 1; fi; \
+	./bin/$(BINARY) doctor "$$ctx_smoke_tmp/team" >"$$ctx_smoke_tmp/team-doctor.out" 2>"$$ctx_smoke_tmp/team-doctor.err"; \
+	test -s "$$ctx_smoke_tmp/team-doctor.out"; \
+	test ! -s "$$ctx_smoke_tmp/team-doctor.err"; \
+	rm "$$ctx_smoke_tmp/team/.ctx/local/CONTINUE.md"; \
+	rmdir "$$ctx_smoke_tmp/team/.ctx/local"; \
+	./bin/$(BINARY) init "$$ctx_smoke_tmp/team" >/dev/null; \
+	test -f "$$ctx_smoke_tmp/team/.ctx/local/CONTINUE.md"; \
+	ctx_smoke_readme="$$ctx_smoke_tmp/team/.ctx/README.md"; \
+	perl -pi -e 's/\{\{OWNER_INSTRUCTIONS_PATH\}\}/OWNERPATH-XYZ/' "$$ctx_smoke_readme"; \
+	perl -pi -e 's/Team mode leaves the durable files visible to Git/CORRUPTED-MANAGED/' "$$ctx_smoke_readme"; \
+	./bin/$(BINARY) update "$$ctx_smoke_tmp/team"; \
+	grep -q OWNERPATH-XYZ "$$ctx_smoke_readme"; \
+	if grep -q CORRUPTED-MANAGED "$$ctx_smoke_readme"; then exit 1; fi; \
+	./bin/$(BINARY) doctor "$$ctx_smoke_tmp/team" >/dev/null; \
+	perl -0pi -e 's/<!-- ctx:managed end -->//' "$$ctx_smoke_readme"; \
+	if ./bin/$(BINARY) doctor "$$ctx_smoke_tmp/team" >/dev/null 2>&1; then exit 1; fi; \
+	git init -q "$$ctx_smoke_tmp/local"; \
+	./bin/$(BINARY) init "$$ctx_smoke_tmp/local" --mode local >"$$ctx_smoke_tmp/local-init.out" 2>"$$ctx_smoke_tmp/local-init.err"; \
+	test -s "$$ctx_smoke_tmp/local-init.out"; \
+	test ! -s "$$ctx_smoke_tmp/local-init.err"; \
+	git -C "$$ctx_smoke_tmp/local" check-ignore -q .ctx/README.md; \
+	./bin/$(BINARY) doctor "$$ctx_smoke_tmp/local" >/dev/null; \
+	echo "smoke: team + local mode checks passed"
 
 clean:
 	rm -rf bin .gocache

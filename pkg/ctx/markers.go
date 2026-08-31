@@ -45,21 +45,25 @@ func hasManaged(content string) bool {
 	return len(parseManaged(content)) > 0
 }
 
-// markersBalanced reports whether every begin has a matching end (no dangling).
+// markersBalanced reports whether markers form a strict sequence of complete,
+// non-nested begin/end pairs. Markerless content is valid and user-owned.
 func markersBalanced(content string) bool {
-	depth := 0
+	inBlock := false
 	for _, line := range strings.Split(content, "\n") {
 		switch strings.TrimSpace(line) {
 		case managedBegin:
-			depth++
-		case managedEnd:
-			depth--
-			if depth < 0 {
-				return false // end before begin
+			if inBlock {
+				return false
 			}
+			inBlock = true
+		case managedEnd:
+			if !inBlock {
+				return false
+			}
+			inBlock = false
 		}
 	}
-	return depth == 0
+	return !inBlock
 }
 
 // updateManagedContent returns existing with each managed block's inner content
