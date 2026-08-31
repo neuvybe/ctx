@@ -1,6 +1,6 @@
 {
   "name": "ctx",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "description": "Release tooling for the ctx Go CLI (semantic-release, commitlint, husky). Not published.",
   "type": "module",

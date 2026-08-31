@@ -1,3 +1,13 @@
+# [0.2.0](https://github.com/neuvybe/ctx/compare/v0.1.2...v0.2.0) (2026-08-31)
+
+
+* feat!: make team mode the default ([448f7b2](https://github.com/neuvybe/ctx/commit/448f7b22660a759428698fdc03cc253fb416260f))
+
+
+### BREAKING CHANGES
+
+* Team mode is now the default for new scaffolds.
+
 ## [0.1.2](https://github.com/neuvybe/ctx/compare/v0.1.1...v0.1.2) (2026-08-29)
 
 
