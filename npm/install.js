@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // @neuvybe/ctx postinstall: fetch the matching OS/arch ctx binary from the
 // GitHub release for THIS package version and extract it next to the package
-// (so bin/ctx.js can exec it). Fails soft (exit 0) so `npm install` never breaks
+// (so bin/ctx.js can exec `ctx` or `ctx.exe`). Fails soft (exit 0) so `npm install` never breaks
 // — the user gets a warning + a fallback (`go install`).
 import { fileURLToPath } from "node:url";
 import { request } from "node:https";
+import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 
 const pkgDir = fileURLToPath(new URL(".", import.meta.url));
@@ -46,8 +47,9 @@ const get = (u, hops = 0) =>
 
 try {
   const res = await get(url);
-  await res.pipe(tar.x({ cwd: pkgDir })); // extracts the `ctx` entry to pkgDir/ctx
-  console.log(`@neuvybe/ctx: installed ctx v${version} -> ${pkgDir}ctx`);
+  await pipeline(res, tar.x({ cwd: pkgDir }));
+  const binary = process.platform === "win32" ? "ctx.exe" : "ctx";
+  console.log(`@neuvybe/ctx: installed ctx v${version} -> ${pkgDir}${binary}`);
 } catch (e) {
   console.warn(
     `@neuvybe/ctx: could not fetch/extract binary (${e.message}). ` +

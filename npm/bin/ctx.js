@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-// @neuvybe/ctx bin shim: execs the platform ctx binary that install.js dropped
-// at <pkgDir>/ctx (one level up from this bin/ shim).
+// @neuvybe/ctx bin shim: execs the platform binary that install.js dropped one
+// level above this bin/ shim.
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 
-const bin = fileURLToPath(new URL("../ctx", import.meta.url));
+const binary = process.platform === "win32" ? "ctx.exe" : "ctx";
+const bin = fileURLToPath(new URL(`../${binary}`, import.meta.url));
 if (!existsSync(bin)) {
   console.error(
     `@neuvybe/ctx: binary not found at ${bin}. ` +

@@ -61,18 +61,20 @@ func resolveCommonGitDir(repo string) (string, error) {
 	return filepath.Clean(dir), nil
 }
 
-func acquireInitLock(repo string) (func() error, error) {
+func acquireLifecycleLock(repo string) (func() error, error) {
 	gd, err := resolveCommonGitDir(repo)
 	if err != nil {
-		return nil, fmt.Errorf("resolve Git directory for init lock: %w", err)
+		return nil, fmt.Errorf("resolve Git directory for lifecycle lock: %w", err)
 	}
 	lockDir := filepath.Join(gd, "ctx-locks")
 	if err := os.MkdirAll(lockDir, 0o755); err != nil {
-		return nil, fmt.Errorf("create init lock directory: %w", err)
+		return nil, fmt.Errorf("create lifecycle lock directory: %w", err)
 	}
+	// Keep the original filename so current lifecycle operations also serialize
+	// against initialization performed by older ctx releases.
 	release, err := acquireFileLock(filepath.Join(lockDir, "init"))
 	if err != nil {
-		return nil, fmt.Errorf("acquire repository init lock: %w", err)
+		return nil, fmt.Errorf("acquire repository lifecycle lock: %w", err)
 	}
 	return release, nil
 }

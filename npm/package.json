@@ -10,7 +10,8 @@
   "files": [
     "install.js",
     "bin/ctx.js",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "postinstall": "node install.js"

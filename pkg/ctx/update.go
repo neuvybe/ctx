@@ -7,16 +7,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
-// managedFiles are the files ctx update refreshes (managed-block swap). All
-// other .ctx/ files are user-owned and never touched by update.
-var managedFiles = []string{"README.md", "REVIEW.md"}
-
 type updateOutput struct {
 	name         string
+	scaffoldRoot string
 	path         string
 	content      []byte
 	mode         os.FileMode
@@ -36,20 +34,45 @@ type inspectedOutput struct {
 	info   fs.FileInfo
 }
 
-// Update refreshes the managed blocks in <repo>/<folder>/ managedFiles from the
-// embedded templates, preserves all user content, and bumps .ctx-version.
-// Files without markers (user took ownership) or missing files are skipped.
-// Every intended output is validated before staging begins, and each output is
-// atomically replaced without opening the destination for writing.
+// Update refreshes the managed documents declared by the scaffold's persisted
+// layout and add-on catalog. V1 uses its frozen unnamed-marker templates and
+// .ctx-version stamp. V2 uses named IDs and atomically advances the config's
+// templateRevision only after every managed output passes preflight.
 func Update(repo, folder string) ([]string, error) {
 	if err := validateExistingFolderPath(folder); err != nil {
 		return nil, err
 	}
-	dest, err := validateUpdateScaffoldPath(repo, folder)
+	releaseLock, err := acquireLifecycleLock(repo)
 	if err != nil {
 		return nil, err
 	}
-	state, err := loadScaffoldState(dest)
+	defer func() { _ = releaseLock() }()
+	dest, err := validateScaffoldPath(repo, folder)
+	if err != nil {
+		return nil, err
+	}
+	state, configSnapshot, err := inspectUpdateScaffoldState(dest)
+	if err != nil {
+		return nil, err
+	}
+	layout, ok := LayoutForVersion(state.layoutVersion())
+	if !ok {
+		return nil, fmt.Errorf("unsupported layoutVersion %d", state.layoutVersion())
+	}
+	if layout.Version != LegacyLayoutVersion {
+		comparison, err := compareTemplateRevisions(state.templateRevision(), layout.TemplateRevision)
+		if err != nil {
+			return nil, fmt.Errorf("unsupported installed template revision %q: %w", state.templateRevision(), err)
+		}
+		if comparison > 0 {
+			return nil, fmt.Errorf("installed template revision %q is newer than this CLI supports (%q); upgrade ctx instead of downgrading the scaffold", state.templateRevision(), layout.TemplateRevision)
+		}
+	}
+	managedDocuments, err := ManagedDocuments(layout.Version, state.Config.Addons)
+	if err != nil {
+		return nil, err
+	}
+	markerFormat, err := managedMarkerFormatFor(layout.MarkerFormat)
 	if err != nil {
 		return nil, err
 	}
@@ -57,52 +80,69 @@ func Update(repo, folder string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	project := state.Config.Project
+	if project == "" {
+		project = filepath.Base(abs)
+	}
+	addonRoutes, err := addonRoutesMarkdown(state.Config.Addons)
+	if err != nil {
+		return nil, err
+	}
 	values := templateValues{
-		Project:      filepath.Base(abs),
+		Project:      project,
 		Date:         time.Now().Format("2006-01-02"),
 		Folder:       folder,
 		Mode:         state.modeLabel(),
 		ContinuePath: state.continuePath(),
+		AddonRoutes:  addonRoutes,
 	}
-	tfs := TemplateFS()
 
 	// Preflight every managed output before creating a temp file or changing an
-	// intended output. Missing and markerless files retain their skip semantics;
-	// every other filesystem or marker-grammar problem is an error.
+	// intended output. V1 retains its markerless/missing user-ownership behavior.
+	// V2's named ID set is structural, so missing markers or files fail closed.
 	var plans []*updateOutput
 	var touched []string
-	for _, name := range managedFiles {
+	for _, document := range managedDocuments {
+		name := document.Path
 		path := filepath.Join(dest, name)
-		existing, err := inspectUpdateOutput(path, true)
+		existing, err := inspectScaffoldOutput(dest, name, layout.Version == LegacyLayoutVersion)
 		if err != nil {
 			return nil, fmt.Errorf("preflight %s: %w", name, err)
 		}
 		if !existing.exists {
 			continue
 		}
-		if !markersBalanced(string(existing.data)) {
-			return nil, fmt.Errorf("preflight %s: malformed managed-marker grammar", name)
+		existingDoc, err := parseManagedDocument(string(existing.data), markerFormat)
+		if err != nil {
+			return nil, fmt.Errorf("preflight %s: malformed managed-marker grammar: %w", name, err)
 		}
-		if !hasManaged(string(existing.data)) {
+		if layout.Version == LegacyLayoutVersion && len(existingDoc.blocks) == 0 {
 			continue
 		}
 
-		tmpl, err := fs.ReadFile(tfs, name)
+		tmpl, err := readTemplateAsset(document.TemplatePath)
 		if err != nil {
 			return nil, fmt.Errorf("read embedded template %s: %w", name, err)
 		}
 		tmplStr := renderTemplate(string(tmpl), values)
-		if !markersBalanced(tmplStr) || !hasManaged(tmplStr) {
-			return nil, fmt.Errorf("embedded template %s has malformed managed-marker grammar", name)
+		templateDoc, err := parseManagedDocument(tmplStr, markerFormat)
+		if err != nil {
+			return nil, fmt.Errorf("embedded template %s has malformed managed-marker grammar: %w", name, err)
 		}
-		updated, existingN, newN := updateManagedContent(string(existing.data), tmplStr)
-		label := name
-		if existingN != newN {
-			label = fmt.Sprintf("%s (managed blocks %d→%d; refreshed matching, left extras)", name, existingN, newN)
+		if len(templateDoc.blocks) == 0 {
+			return nil, fmt.Errorf("embedded template %s has no managed blocks", name)
 		}
-		touched = append(touched, label)
+		if err := validateManagedDocumentCatalog(document, templateDoc, markerFormat); err != nil {
+			return nil, fmt.Errorf("embedded template %s does not match the layout catalog: %w", name, err)
+		}
+		updated, err := updateManagedContentStrict(string(existing.data), tmplStr, markerFormat)
+		if err != nil {
+			return nil, fmt.Errorf("preflight %s: %w", name, err)
+		}
+		touched = append(touched, name)
 		plans = append(plans, &updateOutput{
 			name:         name,
+			scaffoldRoot: dest,
 			path:         path,
 			content:      []byte(updated),
 			mode:         existing.info.Mode().Perm(),
@@ -112,24 +152,47 @@ func Update(repo, folder string) ([]string, error) {
 		})
 	}
 
-	versionPath := filepath.Join(dest, ".ctx-version")
-	version, err := inspectUpdateOutput(versionPath, true)
-	if err != nil {
-		return nil, fmt.Errorf("preflight .ctx-version: %w", err)
+	if layout.Version == LegacyLayoutVersion {
+		versionPath := filepath.Join(dest, ".ctx-version")
+		version, err := inspectScaffoldOutput(dest, ".ctx-version", true)
+		if err != nil {
+			return nil, fmt.Errorf("preflight .ctx-version: %w", err)
+		}
+		versionMode := os.FileMode(0o644)
+		if version.exists {
+			versionMode = version.info.Mode().Perm()
+		}
+		plans = append(plans, &updateOutput{
+			name:         ".ctx-version",
+			scaffoldRoot: dest,
+			path:         versionPath,
+			content:      []byte(Version + "\n"),
+			mode:         versionMode,
+			existed:      version.exists,
+			original:     version.data,
+			originalInfo: version.info,
+		})
+	} else {
+		if !configSnapshot.exists {
+			return nil, fmt.Errorf("preflight %s: missing from layout v%d scaffold", configFileName, layout.Version)
+		}
+		updatedConfig := state.Config
+		updatedConfig.TemplateRevision = layout.TemplateRevision
+		configData, err := marshalConfig(updatedConfig)
+		if err != nil {
+			return nil, fmt.Errorf("render %s: %w", configFileName, err)
+		}
+		plans = append(plans, &updateOutput{
+			name:         configFileName,
+			scaffoldRoot: dest,
+			path:         filepath.Join(dest, configFileName),
+			content:      configData,
+			mode:         configSnapshot.info.Mode().Perm(),
+			existed:      true,
+			original:     configSnapshot.data,
+			originalInfo: configSnapshot.info,
+		})
 	}
-	versionMode := os.FileMode(0o644)
-	if version.exists {
-		versionMode = version.info.Mode().Perm()
-	}
-	plans = append(plans, &updateOutput{
-		name:         ".ctx-version",
-		path:         versionPath,
-		content:      []byte(Version + "\n"),
-		mode:         versionMode,
-		existed:      version.exists,
-		original:     version.data,
-		originalInfo: version.info,
-	})
 
 	if err := stageUpdateOutputs(dest, plans); err != nil {
 		cleanupUpdateTemps(plans)
@@ -145,12 +208,107 @@ func Update(repo, folder string) ([]string, error) {
 	return touched, nil
 }
 
-// validateUpdateScaffoldPath rejects a scaffold path that is itself a symlink
-// or traverses a symlink below repo. Nested paths remain supported for older
-// custom scaffolds, but updates never use them to escape the supplied repo.
-func validateUpdateScaffoldPath(repo, folder string) (string, error) {
+// inspectUpdateScaffoldState parses configuration from the exact regular-file
+// snapshot that Update will later validate and, for v2, atomically replace.
+// This prevents a concurrent config edit from being silently overwritten.
+func inspectUpdateScaffoldState(dest string) (scaffoldState, inspectedOutput, error) {
+	config, err := inspectScaffoldOutput(dest, configFileName, true)
+	if err != nil {
+		return scaffoldState{}, inspectedOutput{}, fmt.Errorf("preflight %s: %w", configFileName, err)
+	}
+	if config.exists {
+		cfg, err := parseConfig(config.data)
+		if err != nil {
+			return scaffoldState{}, inspectedOutput{}, fmt.Errorf("parse %s: %w", configFileName, err)
+		}
+		return scaffoldState{Config: cfg}, config, nil
+	}
+
+	localContinue := filepath.Join(dest, "local", "CONTINUE.md")
+	if _, err := os.Lstat(localContinue); err == nil {
+		return scaffoldState{}, inspectedOutput{}, fmt.Errorf("missing %s in a new-layout scaffold", configFileName)
+	} else if !os.IsNotExist(err) {
+		return scaffoldState{}, inspectedOutput{}, fmt.Errorf("inspect local continuation: %w", err)
+	}
+	if _, err := inspectUpdateOutput(filepath.Join(dest, "CONTINUE.md"), false); err != nil {
+		return scaffoldState{}, inspectedOutput{}, fmt.Errorf("cannot determine scaffold mode: missing %s and no valid legacy CONTINUE.md: %w", configFileName, err)
+	}
+	legacyLayout, _ := LayoutForVersion(LegacyLayoutVersion)
+	return scaffoldState{Config: Config{
+		LayoutVersion:    LegacyLayoutVersion,
+		TemplateRevision: legacyLayout.TemplateRevision,
+		Mode:             ModeLocal,
+	}, Legacy: true}, config, nil
+}
+
+func validateManagedDocumentCatalog(document DocumentSpec, template managedDocument, format managedMarkerFormat) error {
+	if format == managedMarkersUnnamed {
+		if document.ManagedMarkerID != "" {
+			return fmt.Errorf("v1 document declares named marker ID %q", document.ManagedMarkerID)
+		}
+		return nil
+	}
+	if document.ManagedMarkerID == "" {
+		return fmt.Errorf("v2 document has no managed marker ID")
+	}
+	if len(template.blocks) != 1 || template.blocks[0].id != document.ManagedMarkerID {
+		var ids []string
+		for _, block := range template.blocks {
+			ids = append(ids, block.id)
+		}
+		return fmt.Errorf("catalog ID %q, template IDs %v", document.ManagedMarkerID, ids)
+	}
+	return nil
+}
+
+// compareTemplateRevisions compares the deliberately layout-scoped numeric
+// template revision format. It is separate from the ctx CLI release version.
+func compareTemplateRevisions(left, right string) (int, error) {
+	parse := func(value string) ([3]int, error) {
+		var parsed [3]int
+		parts := strings.Split(value, ".")
+		if len(parts) != len(parsed) {
+			return parsed, fmt.Errorf("want MAJOR.MINOR.PATCH")
+		}
+		for i, part := range parts {
+			if part == "" {
+				return parsed, fmt.Errorf("want MAJOR.MINOR.PATCH")
+			}
+			n, err := strconv.Atoi(part)
+			if err != nil || n < 0 {
+				return parsed, fmt.Errorf("want non-negative numeric MAJOR.MINOR.PATCH")
+			}
+			parsed[i] = n
+		}
+		return parsed, nil
+	}
+	a, err := parse(left)
+	if err != nil {
+		return 0, err
+	}
+	b, err := parse(right)
+	if err != nil {
+		return 0, fmt.Errorf("invalid catalog revision %q: %w", right, err)
+	}
+	for i := range a {
+		if a[i] < b[i] {
+			return -1, nil
+		}
+		if a[i] > b[i] {
+			return 1, nil
+		}
+	}
+	return 0, nil
+}
+
+// validateScaffoldPath rejects a scaffold path that is itself a symlink or
+// traverses a symlink below repo. Nested paths remain supported for older
+// custom scaffolds, but lifecycle operations never use them to escape the
+// supplied repository.
+func validateScaffoldPath(repo, folder string) (string, error) {
 	current := repo
-	for _, part := range strings.Split(folder, string(filepath.Separator)) {
+	cleanFolder := filepath.Clean(filepath.FromSlash(folder))
+	for _, part := range strings.Split(cleanFolder, string(filepath.Separator)) {
 		current = filepath.Join(current, part)
 		info, err := os.Lstat(current)
 		if err != nil {
@@ -160,13 +318,13 @@ func validateUpdateScaffoldPath(repo, folder string) (string, error) {
 			return "", fmt.Errorf("inspect scaffold path %s: %w", current, err)
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
-			return "", fmt.Errorf("refusing to update scaffold through symbolic link %s", current)
+			return "", fmt.Errorf("refusing scaffold through symbolic link %s", current)
 		}
 		if !info.IsDir() {
 			return "", fmt.Errorf("scaffold path %s is not a directory", current)
 		}
 	}
-	return filepath.Join(repo, folder), nil
+	return filepath.Join(repo, cleanFolder), nil
 }
 
 // inspectUpdateOutput distinguishes an allowed missing output from all other
@@ -218,6 +376,42 @@ func inspectUpdateOutput(path string, allowMissing bool) (inspectedOutput, error
 		return inspectedOutput{}, fmt.Errorf("close %s after reading: %w", path, closeErr)
 	}
 	return inspectedOutput{exists: true, data: data, info: openedInfo}, nil
+}
+
+// inspectScaffoldOutput rejects symbolic-link or non-directory components
+// between the scaffold root and an output before inspecting the output entry.
+// The same check is repeated immediately before publication through each
+// updateOutput's scaffoldRoot.
+func inspectScaffoldOutput(dest, name string, allowMissing bool) (inspectedOutput, error) {
+	native := filepath.FromSlash(name)
+	clean := filepath.Clean(native)
+	if name == "" || filepath.IsAbs(native) || clean == "." || clean == ".." || clean != native || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return inspectedOutput{}, fmt.Errorf("invalid scaffold output path %q", name)
+	}
+
+	current := dest
+	rootInfo, err := os.Lstat(current)
+	if err != nil {
+		return inspectedOutput{}, fmt.Errorf("inspect scaffold root: %w", err)
+	}
+	if rootInfo.Mode()&os.ModeSymlink != 0 || !rootInfo.IsDir() {
+		return inspectedOutput{}, fmt.Errorf("scaffold root %s is not a real directory", dest)
+	}
+	parts := strings.Split(clean, string(filepath.Separator))
+	for i := 0; i < len(parts)-1; i++ {
+		current = filepath.Join(current, parts[i])
+		info, err := os.Lstat(current)
+		if err != nil {
+			return inspectedOutput{}, fmt.Errorf("inspect output parent %s: %w", filepath.ToSlash(strings.Join(parts[:i+1], string(filepath.Separator))), err)
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return inspectedOutput{}, fmt.Errorf("output parent %s is a symbolic link", filepath.ToSlash(strings.Join(parts[:i+1], string(filepath.Separator))))
+		}
+		if !info.IsDir() {
+			return inspectedOutput{}, fmt.Errorf("output parent %s is not a directory", filepath.ToSlash(strings.Join(parts[:i+1], string(filepath.Separator))))
+		}
+	}
+	return inspectUpdateOutput(filepath.Join(dest, clean), allowMissing)
 }
 
 func stageUpdateOutputs(dest string, plans []*updateOutput) error {
@@ -283,7 +477,13 @@ func validateUpdateOutputsUnchanged(plans []*updateOutput) error {
 }
 
 func validateUpdateOutputUnchanged(plan *updateOutput) error {
-	current, err := inspectUpdateOutput(plan.path, !plan.existed)
+	var current inspectedOutput
+	var err error
+	if plan.scaffoldRoot != "" {
+		current, err = inspectScaffoldOutput(plan.scaffoldRoot, plan.name, !plan.existed)
+	} else {
+		current, err = inspectUpdateOutput(plan.path, !plan.existed)
+	}
 	if err != nil {
 		return err
 	}
@@ -334,7 +534,13 @@ func rollbackPublishedUpdates(plans []*updateOutput, cause error) error {
 		if !plan.published {
 			continue
 		}
-		current, err := inspectUpdateOutput(plan.path, false)
+		var current inspectedOutput
+		var err error
+		if plan.scaffoldRoot != "" {
+			current, err = inspectScaffoldOutput(plan.scaffoldRoot, plan.name, false)
+		} else {
+			current, err = inspectUpdateOutput(plan.path, false)
+		}
 		if err != nil {
 			rollbackErrors = append(rollbackErrors, fmt.Sprintf("%s: %v", plan.name, err))
 			continue

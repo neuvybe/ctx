@@ -35,3 +35,5 @@ version.
 
 The migration guide for the team-mode default is
 [`migrations/0.2-team-mode.md`](migrations/0.2-team-mode.md).
+The migration guide for the incompatible layout-v2/API changes is
+[`migrations/0.3-layout-v2.md`](migrations/0.3-layout-v2.md).

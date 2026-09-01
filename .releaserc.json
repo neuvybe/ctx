@@ -16,7 +16,7 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["CHANGELOG.md", "package.json", "npm/package.json"],
+        "assets": ["CHANGELOG.md", "package.json", "package-lock.json", "npm/package.json", "pkg/ctx/version.go"],
         "message": "chore(release): ${nextRelease.version} [skip ci]"
       }
     ],

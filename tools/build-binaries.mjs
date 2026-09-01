@@ -2,8 +2,9 @@
 // tools/build-binaries.mjs <version>
 //
 // Cross-compiles the ctx CLI for the release matrix and packs each target as
-// dist/ctx_<version>_<goos>_<goarch>.tar.gz (containing a `ctx` binary) — the
-// naming ctx upgrade's pickAsset expects. Also writes dist/checksums.txt.
+// dist/ctx_<version>_<goos>_<goarch>.tar.gz (containing `ctx`, or `ctx.exe` on
+// Windows) — the naming ctx upgrade's pickAsset expects. Also writes
+// dist/checksums.txt.
 // CGO_ENABLED=0 → static binaries (ctx has no C deps).
 //
 // Used by semantic-release's @semantic-release/exec prepareCmd, and by the
@@ -20,10 +21,9 @@ const targets = [
   ["darwin", "arm64"],
   ["linux", "amd64"],
   ["linux", "arm64"],
+  ["windows", "amd64"],
+  ["windows", "arm64"],
 ];
-// Windows is intentionally excluded from v0.1.0: ctx upgrade's archive entry
-// name is `ctx` (not `ctx.exe`); add Windows once upgrade is OS-aware on entry
-// names. See docs/known-issues in the .ctx platform.
 
 const dist = "dist";
 rmSync(dist, { recursive: true, force: true });
@@ -35,12 +35,13 @@ const shacmd = process.platform === "darwin" ? "shasum -a 256" : "sha256sum";
 for (const [goos, goarch] of targets) {
   const staging = join(dist, `ctx_${version}_${goos}_${goarch}`);
   mkdirSync(staging, { recursive: true });
-  const out = join(staging, "ctx");
+  const binary = goos === "windows" ? "ctx.exe" : "ctx";
+  const out = join(staging, binary);
   execSync(`go build -trimpath -ldflags "${ldflags}" -o "${out}" ./cmd/ctx`, {
     stdio: "inherit",
     env: { ...process.env, GOOS: goos, GOARCH: goarch, CGO_ENABLED: "0" },
   });
-  execSync(`tar -C "${staging}" -czf "${dist}/ctx_${version}_${goos}_${goarch}.tar.gz" ctx`, {
+  execSync(`tar -C "${staging}" -czf "${dist}/ctx_${version}_${goos}_${goarch}.tar.gz" "${binary}"`, {
     stdio: "inherit",
     env: { ...process.env, COPYFILE_DISABLE: "1" }, // no macOS AppleDouble (._ctx) in archives
   });
