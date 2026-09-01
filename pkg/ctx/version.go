@@ -5,4 +5,4 @@ package ctx
 //	-ldflags "-X github.com/neuvybe/ctx/pkg/ctx.Version=0.1.0"
 //
 // so release builds stamp a real version; the default marks a dev build.
-var Version = "0.1.0-dev"
+var Version = "0.3.0"

@@ -1,3 +1,18 @@
+# [0.3.0](https://github.com/neuvybe/ctx/compare/v0.2.0...v0.3.0) (2026-09-01)
+
+
+* feat!: introduce lean context layout v2 ([999234a](https://github.com/neuvybe/ctx/commit/999234abf3995b5415c204faa4f64076932d30fd))
+
+
+### Bug Fixes
+
+* reject symlinked status evidence ([074b007](https://github.com/neuvybe/ctx/commit/074b007f6654984923551fe7c8562d1b4654835f))
+
+
+### BREAKING CHANGES
+
+* New scaffolds use layout v2; InitOptions and Config changed.
+
 # [0.2.0](https://github.com/neuvybe/ctx/compare/v0.1.2...v0.2.0) (2026-08-31)
 
 

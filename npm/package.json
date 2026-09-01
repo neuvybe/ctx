@@ -1,6 +1,6 @@
 {
   "name": "@neuvybe/ctx",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "ctx — a reusable agent-context platform. Shares durable project guidance while keeping per-clone session state private, with an optional whole-folder local mode.",
   "license": "MIT",
   "type": "module",
