@@ -20,7 +20,7 @@ test("materializes a clean standalone demo with optional repo-local skill", asyn
     assert.equal(result.repository, destination);
     assert.equal(result.sourceCommit, git(destination, "rev-parse", "HEAD"));
     assert.equal(git(destination, "status", "--porcelain"), "");
-    for (const file of ["go.mod", "booking/service.go", "booking/service_test.go", "AGENTS.md", "docs/requirements.md"]) {
+    for (const file of ["README.md", "go.mod", "booking/service.go", "booking/service_test.go", "AGENTS.md", "docs/requirements.md"]) {
       assert.equal(
         await readFile(join(destination, file), "utf8"),
         await readFile(join(repository, "testdata", "booking-demo", file), "utf8"),

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Materialize a fresh, isolated demo; never modify an existing destination.
-import { cp, lstat, mkdir, realpath } from "node:fs/promises";
+import { cp, lstat, mkdir, readdir, realpath } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,9 +31,14 @@ try {
   if (error.code !== "ENOENT") throw error;
 }
 await mkdir(destination);
-await cp(join(repository, "testdata", "booking-demo"), destination, {
-  recursive: true, force: false, errorOnExist: true,
-});
+// Claim the root with mkdir, then copy into absent child paths. Copying the
+// fixture onto that existing root with errorOnExist is rejected by newer Node.
+const fixture = join(repository, "testdata", "booking-demo");
+for (const entry of await readdir(fixture)) {
+  await cp(join(fixture, entry), join(destination, entry), {
+    recursive: true, force: false, errorOnExist: true,
+  });
+}
 if (withSkill) {
   const skillParent = join(destination, ".agents", "skills");
   await mkdir(skillParent, { recursive: true });
