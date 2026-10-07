@@ -1,3 +1,17 @@
+# [0.4.0](https://github.com/neuvybe/ctx/compare/v0.3.0...v0.4.0) (2026-10-07)
+
+
+* feat!: include behavior context by default ([#3](https://github.com/neuvybe/ctx/issues/3)) ([5c3b88e](https://github.com/neuvybe/ctx/commit/5c3b88ea08d079239ad4798f72c601d8afa6c163))
+
+
+### BREAKING CHANGES
+
+* New layout-v2 scaffolds select behavior and glossary by default.
+Use --without behavior,glossary, or an explicit empty InitOptions.Addons slice,
+for the fixed core only. Existing scaffolds retain their selected add-ons;
+after upgrading ctx, run ctx update followed by ctx add behavior to adopt
+the new document.
+
 # [0.3.0](https://github.com/neuvybe/ctx/compare/v0.2.0...v0.3.0) (2026-09-01)
 
 
