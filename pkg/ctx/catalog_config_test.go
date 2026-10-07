@@ -31,7 +31,7 @@ func TestConfigSchemaTwoRoundTripCanonicalizesAddons(t *testing.T) {
 	want := Config{
 		SchemaVersion:    currentSchemaVersion,
 		LayoutVersion:    CurrentLayoutVersion,
-		TemplateRevision: CurrentTemplateRevision,
+		TemplateRevision: "2.0.0",
 		Project:          "example",
 		Mode:             ModeLocal,
 		Addons:           []string{"contracts", "glossary"},
@@ -113,8 +113,8 @@ func TestCatalogCoreAndAddonSelection(t *testing.T) {
 
 func TestDefaultAddonIDs(t *testing.T) {
 	defaults := DefaultAddonIDs()
-	if !reflect.DeepEqual(defaults, []string{"glossary"}) {
-		t.Fatalf("default add-ons = %v, want [glossary]", defaults)
+	if !reflect.DeepEqual(defaults, []string{"behavior", "glossary"}) {
+		t.Fatalf("default add-ons = %v, want behavior and glossary", defaults)
 	}
 	var marked []string
 	for _, addon := range ListAddons() {
@@ -126,7 +126,7 @@ func TestDefaultAddonIDs(t *testing.T) {
 		t.Fatalf("catalog default metadata = %v, want %v", marked, defaults)
 	}
 	defaults[0] = "contracts"
-	if got := DefaultAddonIDs(); !reflect.DeepEqual(got, []string{"glossary"}) {
+	if got := DefaultAddonIDs(); !reflect.DeepEqual(got, []string{"behavior", "glossary"}) {
 		t.Fatalf("caller mutation changed catalog defaults: %v", got)
 	}
 }
@@ -136,8 +136,8 @@ func TestNormalizeInitOptionsDistinguishesDefaultAndCoreOnlyAddons(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(defaults.Addons, []string{"glossary"}) {
-		t.Fatalf("nil add-ons normalized to %v, want [glossary]", defaults.Addons)
+	if !reflect.DeepEqual(defaults.Addons, []string{"behavior", "glossary"}) {
+		t.Fatalf("nil add-ons normalized to %v, want behavior and glossary", defaults.Addons)
 	}
 
 	coreOnly, err := normalizeInitOptions(InitOptions{Addons: []string{}})

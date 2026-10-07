@@ -3,7 +3,7 @@
 `ctx` gives coding agents durable, project-specific context that survives
 compaction. New scaffolds use layout v2: a small core of evidence-tracked project
 facts, a hierarchical index, and an ignored local continuation file. The
-glossary add-on is selected by default; other add-ons stay opt-in.
+behavior and glossary add-ons are selected by default; other add-ons stay opt-in.
 
 Team mode is the default. Durable context is available to review and commit,
 while `.ctx/local/CONTINUE.md` stays ignored. `--mode local` keeps the entire
@@ -28,11 +28,11 @@ go install github.com/neuvybe/ctx/cmd/ctx@latest
 ## Initialize
 
 ```bash
-# Team-mode v2 core plus glossary
+# Team-mode v2 core plus behavior and glossary
 ctx init /path/to/repo
 
 # Core only
-ctx init /path/to/repo --without glossary
+ctx init /path/to/repo --without behavior,glossary
 
 # Whole-folder private
 ctx init /path/to/repo --mode local
@@ -43,12 +43,22 @@ ctx init /path/to/repo --with operating,contracts
 # Inspect or extend an existing v2 scaffold
 ctx add --list
 ctx add /path/to/repo review
+
+# Adopt behavior in an existing v2 scaffold after upgrading ctx
+ctx update /path/to/repo
+ctx add /path/to/repo behavior
 ```
 
-`glossary` remains an add-on so projects can omit it with `--without glossary`,
-but new scaffolds select it by default. `--with` and `--without` are repeatable
+`behavior` explains core business/domain rules and expected outcomes;
+`glossary` explains project-specific terminology. Both remain add-ons so
+projects can omit either with `--without behavior` or `--without glossary`,
+but new scaffolds select both by default. `--with` and `--without` are repeatable
 and comma-friendly. The other available add-ons are `operating`, `contracts`,
 `extending`, and `review`.
+
+For large projects, keep `context/behavior.md` concise and route deeper topics
+to `context/behavior/<topic>.md`. Each child carries its own readiness metadata.
+Existing scaffolds retain their selected add-ons until explicitly extended.
 
 For new initialization, `--folder` accepts one top-level name containing only
 letters, digits, `.`, `_`, or `-`. Repeat a custom `--folder` with later

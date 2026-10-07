@@ -12,13 +12,13 @@ not apply.
 - `ctx init --mode local` keeps the whole selected folder ignored through the
   repository's common `.git/info/exclude`.
 - `ctx` never stages or commits files in either mode.
-- The v2 core is intentionally small. New scaffolds select the glossary add-on
-  by default because project-specific language is commonly useful; omit it for
-  a core-only scaffold with `--without glossary`. Select other add-ons with
-  repeatable/comma-friendly `--with`, or install one later:
+- The v2 core is intentionally small. New scaffolds select behavior and glossary
+  by default for domain rules and project-specific language; omit both for
+  a core-only scaffold with `--without behavior,glossary`. Select other add-ons
+  with repeatable/comma-friendly `--with`, or install one later:
 
 ```bash
-ctx init --without glossary
+ctx init --without behavior,glossary
 ctx init --with operating,contracts
 ctx add --list
 ctx add review
@@ -42,28 +42,38 @@ Then inspect the root README, manifests, build/test configuration, entrypoints,
 and top-level source tree. Commit messages and existing documentation are leads;
 verify important claims against current source.
 
-## 3. Fill the core from parent summary to specialized detail
+## 3. Fill context from parent summary to specialized detail
 
 1. **`context/overview.md`** — users, current purpose, capabilities, boundaries,
    non-goals, maturity, and canonical roadmap pointers. Keep technical flow
    detail out of this parent summary.
-2. **`context/architecture.md`** — components, entrypoints, important flows,
-   invariants, state ownership, lifecycle/concurrency where relevant, and active
-   runtime integrations. Cite source paths.
-3. **`context/caveats.md`** — confirmed limitations and gotchas that change how
+2. **`context/behavior.md`** — core business/domain concepts, relationships,
+   workflows, decision rules, state transitions, and expected outcomes. Label
+   implemented behavior separately from intended changes and cite code, tests,
+   or canonical owner-approved requirements. Route deeper topics to focused
+   children under `context/behavior/`; each child carries its own metadata.
+3. **`context/architecture.md`** — components, entrypoints, implementation flows,
+   technical invariants, state ownership, lifecycle/concurrency where relevant,
+   and active runtime integrations. Link to behavior for domain rules and cite
+   source paths.
+4. **`context/caveats.md`** — confirmed limitations and gotchas that change how
    an agent should work. Include evidence and a safe workaround; distinguish
    product behavior from environment constraints. Do not create a speculative
    bug backlog.
-4. **Fact add-ons** — fill the default-selected `glossary` plus `contracts` and
-   `extending` when installed. Use `not-applicable` with a reason if later
+5. **Other fact add-ons** — fill the default-selected `glossary` plus `contracts`
+   and `extending` when installed. Use `not-applicable` with a reason if later
    inspection proves an installed concern does not apply.
-5. **`INDEX.md`** — verify that routing names only installed documents and sends
+6. **`INDEX.md`** — verify that routing names only installed documents and sends
    readers to the smallest relevant set. Keep facts in their owning document,
    not in the router.
-6. **`local/CONTINUE.md`** — record only current objective, repository position,
+7. **`local/CONTINUE.md`** — record only current objective, repository position,
    completed/in-flight work, verification, next action, blockers, and shared-doc
    follow-ups. Durable discoveries belong in shared context or canonical project
    records.
+
+Skip behavior or glossary when deliberately omitted. For an existing v2 scaffold
+that predates behavior, upgrade ctx, run `ctx update`, then `ctx add behavior`.
+Update and fresh-clone hydration preserve the configured add-on set.
 
 If the `operating` or `review` add-on is installed, the repository owner should
 fill its project-owned policy/profile. Do not invent authorization rules, a base

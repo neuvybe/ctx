@@ -125,6 +125,9 @@ func TestInitWithOptionsTeam(t *testing.T) {
 	if !strings.Contains(string(idx), "context/glossary.md") {
 		t.Errorf("INDEX.md missing default glossary route")
 	}
+	if !strings.Contains(string(idx), "context/behavior.md") {
+		t.Errorf("INDEX.md missing default behavior route")
+	}
 	if _, err := os.Lstat(filepath.Join(repo, ".ctx", ".ctx-version")); !os.IsNotExist(err) {
 		t.Fatalf("layout v2 should not create .ctx-version: %v", err)
 	}
@@ -140,11 +143,18 @@ func TestInitWithOptionsTeam(t *testing.T) {
 	if state.Config.SchemaVersion != currentSchemaVersion || state.layoutVersion() != CurrentLayoutVersion || state.Config.Project != filepath.Base(repo) {
 		t.Errorf("default config = %+v, want schema/layout v2 with stable project", state.Config)
 	}
-	if !reflect.DeepEqual(state.Config.Addons, []string{"glossary"}) {
-		t.Errorf("default add-ons = %v, want [glossary]", state.Config.Addons)
+	if !reflect.DeepEqual(state.Config.Addons, []string{"behavior", "glossary"}) {
+		t.Errorf("default add-ons = %v, want behavior and glossary", state.Config.Addons)
 	}
-	if _, err := os.Stat(filepath.Join(repo, ".ctx", "context", "glossary.md")); err != nil {
-		t.Errorf("default glossary missing: %v", err)
+	for _, name := range []string{"behavior", "glossary"} {
+		content, err := os.ReadFile(filepath.Join(repo, ".ctx", "context", name+".md"))
+		if err != nil {
+			t.Fatalf("default %s missing: %v", name, err)
+		}
+		metadata, found, err := parseDocumentMetadata(content)
+		if err != nil || !found || metadata.Status != "draft" {
+			t.Errorf("default %s metadata = %+v, found = %v, err = %v", name, metadata, found, err)
+		}
 	}
 	for _, optional := range []string{"OPERATING.md", "REVIEW.md"} {
 		if _, err := os.Lstat(filepath.Join(repo, ".ctx", filepath.FromSlash(optional))); !os.IsNotExist(err) {
@@ -176,8 +186,10 @@ func TestInitWithOptionsExplicitEmptyAddonsCreatesCoreOnly(t *testing.T) {
 	if len(state.Config.Addons) != 0 {
 		t.Fatalf("core-only config add-ons = %v, want none", state.Config.Addons)
 	}
-	if _, err := os.Lstat(filepath.Join(repo, ".ctx", "context", "glossary.md")); !os.IsNotExist(err) {
-		t.Fatalf("core-only init created glossary: %v", err)
+	for _, name := range []string{"behavior", "glossary"} {
+		if _, err := os.Lstat(filepath.Join(repo, ".ctx", "context", name+".md")); !os.IsNotExist(err) {
+			t.Fatalf("core-only init created %s: %v", name, err)
+		}
 	}
 	index, err := os.ReadFile(filepath.Join(repo, ".ctx", "INDEX.md"))
 	if err != nil {

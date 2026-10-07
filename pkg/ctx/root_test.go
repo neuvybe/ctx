@@ -26,8 +26,8 @@ func TestInitCommandDefaultsToTeamMode(t *testing.T) {
 	if state.Config.Mode != ModeTeam {
 		t.Fatalf("command mode = %s, want team", state.Config.Mode)
 	}
-	if strings.Join(state.Config.Addons, ",") != "glossary" {
-		t.Fatalf("default command add-ons = %v, want [glossary]", state.Config.Addons)
+	if strings.Join(state.Config.Addons, ",") != "behavior,glossary" {
+		t.Fatalf("default command add-ons = %v, want behavior and glossary", state.Config.Addons)
 	}
 	if !strings.Contains(output.String(), "mode team") || !strings.Contains(output.String(), "visible to Git") {
 		t.Fatalf("team-mode output missing visibility summary:\n%s", output.String())
@@ -68,29 +68,50 @@ func TestInitCommandAcceptsAddons(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(state.Config.Addons, ",") != "contracts,glossary" {
+	if strings.Join(state.Config.Addons, ",") != "behavior,contracts,glossary" {
 		t.Fatalf("installed add-ons = %v", state.Config.Addons)
 	}
 }
 
-func TestInitCommandCanOptOutOfDefaultGlossary(t *testing.T) {
-	repo := mkRepo(t)
-	cmd := NewRootCmd()
-	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{"init", repo, "--without", "glossary"})
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("ctx init --without glossary: %v", err)
+func TestInitCommandCanOptOutOfDefaultAddons(t *testing.T) {
+	tests := []struct {
+		name    string
+		flags   []string
+		want    string
+		omitted []string
+	}{
+		{name: "omit glossary", flags: []string{"--without", "glossary"}, want: "behavior", omitted: []string{"glossary"}},
+		{name: "omit behavior", flags: []string{"--without", "behavior"}, want: "glossary", omitted: []string{"behavior"}},
+		{name: "omit both with commas", flags: []string{"--without", "behavior,glossary"}, omitted: []string{"behavior", "glossary"}},
+		{name: "omit both with repeated flags", flags: []string{"--without", "behavior", "--without", "glossary"}, omitted: []string{"behavior", "glossary"}},
 	}
-	state, err := loadScaffoldState(filepath.Join(repo, ".ctx"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(state.Config.Addons) != 0 {
-		t.Fatalf("installed add-ons = %v, want none", state.Config.Addons)
-	}
-	if _, err := os.Lstat(filepath.Join(repo, ".ctx", "context", "glossary.md")); !os.IsNotExist(err) {
-		t.Fatalf("opt-out created glossary: %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := mkRepo(t)
+			cmd := NewRootCmd()
+			cmd.SetOut(&bytes.Buffer{})
+			cmd.SetErr(&bytes.Buffer{})
+			cmd.SetArgs(append([]string{"init", repo}, tt.flags...))
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("ctx init opt-out: %v", err)
+			}
+			state, err := loadScaffoldState(filepath.Join(repo, ".ctx"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := strings.Join(state.Config.Addons, ","); got != tt.want {
+				t.Fatalf("installed add-ons = %v, want %q", state.Config.Addons, tt.want)
+			}
+			index := addTestRead(t, filepath.Join(repo, ".ctx", "INDEX.md"))
+			for _, name := range tt.omitted {
+				if _, err := os.Lstat(filepath.Join(repo, ".ctx", "context", name+".md")); !os.IsNotExist(err) {
+					t.Fatalf("opt-out created %s: %v", name, err)
+				}
+				if bytes.Contains(index, []byte("context/"+name+".md")) {
+					t.Fatalf("INDEX routes to omitted %s: %s", name, index)
+				}
+			}
+		})
 	}
 }
 
@@ -131,20 +152,22 @@ func TestAddCommandListsAndInstallsAddon(t *testing.T) {
 	if err := listCmd.Execute(); err != nil {
 		t.Fatalf("ctx add --list: %v", err)
 	}
-	for _, id := range []string{"operating", "contracts", "extending", "glossary", "review"} {
+	for _, id := range []string{"operating", "behavior", "contracts", "extending", "glossary", "review"} {
 		if !strings.Contains(catalog.String(), id) {
 			t.Fatalf("catalog missing %s:\n%s", id, catalog.String())
 		}
 	}
-	var glossaryLine string
-	for _, line := range strings.Split(catalog.String(), "\n") {
-		if strings.HasPrefix(line, "glossary") {
-			glossaryLine = line
-			break
+	for _, name := range []string{"behavior", "glossary"} {
+		var defaultLine string
+		for _, line := range strings.Split(catalog.String(), "\n") {
+			if strings.HasPrefix(line, name) {
+				defaultLine = line
+				break
+			}
 		}
-	}
-	if !strings.Contains(glossaryLine, "default for new scaffolds") {
-		t.Fatalf("catalog does not identify glossary as the default:\n%s", catalog.String())
+		if !strings.Contains(defaultLine, "default for new scaffolds") {
+			t.Fatalf("catalog does not identify %s as a default:\n%s", name, catalog.String())
+		}
 	}
 
 	repo := mkRepo(t)

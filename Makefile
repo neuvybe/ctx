@@ -33,6 +33,9 @@ smoke: build
 	grep -q '"schemaVersion": 2' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
 	grep -q '"layoutVersion": 2' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
 	test ! -e "$$ctx_smoke_tmp/team/.ctx/.ctx-version"; \
+	test -f "$$ctx_smoke_tmp/team/.ctx/context/behavior.md"; \
+	grep -q '"behavior"' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
+	grep -q 'context/behavior.md' "$$ctx_smoke_tmp/team/.ctx/INDEX.md"; \
 	test -f "$$ctx_smoke_tmp/team/.ctx/context/glossary.md"; \
 	grep -q '"glossary"' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
 	test -f "$$ctx_smoke_tmp/team/.ctx/local/CONTINUE.md"; \
@@ -46,6 +49,7 @@ smoke: build
 	./bin/$(BINARY) init "$$ctx_smoke_tmp/team" >/dev/null; \
 	test -f "$$ctx_smoke_tmp/team/.ctx/local/CONTINUE.md"; \
 	./bin/$(BINARY) add --list >"$$ctx_smoke_tmp/addons.out"; \
+	grep -q 'behavior.*default for new scaffolds' "$$ctx_smoke_tmp/addons.out"; \
 	grep -q 'glossary.*default for new scaffolds' "$$ctx_smoke_tmp/addons.out"; \
 	./bin/$(BINARY) add "$$ctx_smoke_tmp/team" contracts >/dev/null; \
 	test -f "$$ctx_smoke_tmp/team/.ctx/context/contracts.md"; \
