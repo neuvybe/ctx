@@ -20,27 +20,33 @@ the sharing decision.
 ## 2. Keep the core small; choose specialized context deliberately
 
 Every project benefits from a concise overview, architecture map, confirmed
-caveats, router, and continuation state. Project-specific terms are common
-enough that new scaffolds select the glossary add-on by default, but it remains
-outside the fixed core and can be omitted when ordinary language is sufficient.
+caveats, router, and continuation state. Core behavior and project-specific
+terms are common enough that new scaffolds select behavior and glossary by
+default. Both remain outside the fixed core and can be omitted deliberately.
 Not every project has a formal extension API, compatibility-sensitive
 representations, a shared operating policy, or a review workflow.
 
 Layout v2 keeps those concerns in the add-on catalog. Apart from the
-default-selected glossary, add-ons are opt-in. Installed documents should earn
-their routing and maintenance cost rather than exist to complete an empty
-taxonomy.
+default-selected behavior and glossary, add-ons are opt-in. Installed documents
+should earn their routing and maintenance cost rather than exist to complete an
+empty taxonomy.
 
 ## 3. Give each concern one owner and route hierarchically
 
 The index routes; it does not duplicate facts. Overview owns purpose and scope.
-Architecture owns components, flows, and invariants. Caveats owns confirmed
-limitations and operational gotchas. Optional fact documents own their narrower
-contracts, extension points, or terminology. Continuation owns local state only.
+Behavior owns business/domain rules, decisions, state transitions, and expected
+outcomes. Architecture owns components, implementation flows, and technical
+invariants. Caveats owns confirmed limitations and operational gotchas. Other
+fact add-ons own their narrower contracts, extension points, or terminology.
+Continuation owns local state only.
 
 Agents should read parent summaries before specialized children and load only
 the branch relevant to the task. When detail outgrows a scannable document,
 split a coherent child and link it instead of expanding the mandatory load path.
+For behavior, keep the shared model in `context/behavior.md` and put focused
+workflow or domain detail under `context/behavior/`. Label current behavior and
+intended changes separately so requirements cannot silently become claims about
+the implementation.
 
 ## 4. Make freshness and evidence visible
 

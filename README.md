@@ -7,7 +7,7 @@ isolating clone/session state:
 - core fact documents live under `.ctx/context/`;
 - `.ctx/local/CONTINUE.md` records current local state and stays ignored;
 - `INDEX.md` routes an agent to only the documents a task needs;
-- the glossary add-on is selected by default; other add-ons stay opt-in;
+- behavior and glossary add-ons are selected by default; other add-ons stay opt-in;
 - `ctx` never stages or commits files.
 
 Use `--mode local` when the entire context folder should remain private through
@@ -15,7 +15,7 @@ the repository's common `.git/info/exclude` file.
 
 ## Layout v2
 
-A default new initialization creates the fixed core plus glossary:
+A default new initialization creates the fixed core plus behavior and glossary:
 
 ```text
 .ctx/
@@ -27,24 +27,29 @@ A default new initialization creates the fixed core plus glossary:
 │   ├── overview.md
 │   ├── architecture.md
 │   ├── caveats.md
+│   ├── behavior.md      # default-selected add-on
 │   └── glossary.md      # default-selected add-on
 └── local/
     └── CONTINUE.md
 ```
 
-The core has one owner per concern: overview owns purpose and scope;
-architecture owns components and flows; caveats owns confirmed limitations and
-operational gotchas; continuation owns current local state only.
+Each concern has one owner: overview owns purpose and scope; behavior owns
+business/domain rules, decisions, state transitions, and expected outcomes;
+architecture owns components, implementation flows, and technical invariants;
+caveats owns confirmed limitations and operational gotchas; continuation owns
+current local state only.
 Large projects can add focused nested documents under `context/` and route to
 them from INDEX's project-owned section without expanding the always-read core.
 
-The core stays fixed and lean. Glossary remains an add-on, but new scaffolds
-select it by default because project-specific language is broadly useful and
-the index loads it only when terminology matters. Use `--without glossary` for
-a core-only scaffold. The other add-ons remain opt-in.
+The core stays fixed and lean. Behavior and glossary remain add-ons, but new
+scaffolds select them by default. The index routes logic-related tasks to
+behavior and terminology-related tasks to glossary. Omit either with
+`--without behavior` or `--without glossary`; use `--without behavior,glossary`
+for a core-only scaffold. The other add-ons remain opt-in.
 
-| Add-on ID | Installed file | Default | Use when |
+| Add-on | Installed file | Default | Use when |
 |---|---|---:|---|
+| `behavior` | `context/behavior.md` | Yes | Core business/domain rules and expected outcomes need explanation |
 | `glossary` | `context/glossary.md` | Yes | Project-specific terminology needs disambiguation |
 | `operating` | `OPERATING.md` | No | The owner wants a shared project-specific working agreement |
 | `contracts` | `context/contracts.md` | No | Data, API, storage, or message compatibility is a real boundary |
@@ -70,11 +75,11 @@ go install github.com/neuvybe/ctx/cmd/ctx@latest
 ## Initialize and extend
 
 ```bash
-# Default: team mode with the v2 core and glossary add-on
+# Default: team mode with the v2 core plus behavior and glossary
 ctx init /path/to/repo
 
-# Core only: omit the default-selected glossary
-ctx init /path/to/repo --without glossary
+# Core only: omit both default-selected add-ons
+ctx init /path/to/repo --without behavior,glossary
 
 # Entire scaffold private to the repository
 ctx init /path/to/repo --mode local
@@ -85,6 +90,10 @@ ctx init /path/to/repo --with operating,contracts
 # Inspect the catalog, then add one capability later
 ctx add --list
 ctx add /path/to/repo review
+
+# Adopt behavior in an existing v2 scaffold after upgrading ctx
+ctx update /path/to/repo
+ctx add /path/to/repo behavior
 
 # One custom top-level folder name
 ctx init /path/to/repo --folder .agent
@@ -97,6 +106,12 @@ the new-layout CLI contract.
 On a fresh clone containing committed team context, run `ctx init` again and
 repeat `--folder` when customized. It hydrates the missing ignored continuation
 without rewriting durable files.
+
+Keep `context/behavior.md` as a short parent model. Put detailed rules for a
+workflow or domain under `context/behavior/<topic>.md` and link them from the
+parent. Label implemented behavior separately from intended changes and cite
+the relevant source, tests, or canonical requirements. Existing scaffolds keep
+their configured add-ons; update and hydration do not install new defaults.
 
 ## Fill and maintain context
 

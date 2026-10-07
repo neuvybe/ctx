@@ -18,15 +18,17 @@
 > Identify user/runtime entrypoints and exchanges with external systems. Omit
 > build or delivery tooling unless it materially affects runtime behavior.
 
-## Key flows
+## Implementation flows
 
-> Trace the important control/data flows as short numbered sequences. Cite the
-> source path for each flow and link to `contracts.md` for representation-level
-> compatibility details when that add-on exists.
+> Trace the important control/data flows through components as short numbered
+> sequences. Cite source paths. When installed, link to `behavior.md` for domain
+> decisions and expected outcomes, and `contracts.md` for representation-level
+> compatibility details.
 
-## Invariants and state ownership
+## Technical invariants and state ownership
 
-> Record which component owns mutable state and the invariants callers rely on.
+> Record which component owns mutable state and the technical invariants callers
+> rely on. Put business/domain rules in `behavior.md` when that add-on is installed.
 
 ## Concurrency and lifecycle
 

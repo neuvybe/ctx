@@ -9,7 +9,7 @@ import (
 const (
 	LegacyLayoutVersion     = 1
 	CurrentLayoutVersion    = 2
-	CurrentTemplateRevision = "2.0.0"
+	CurrentTemplateRevision = "2.0.1"
 )
 
 type MarkerFormat string
@@ -83,6 +83,7 @@ type addonSpec struct {
 
 var addonCatalog = []addonSpec{
 	{Addon: Addon{ID: "operating", Path: "OPERATING.md", Description: "owner-ratified working agreement", RouteNeed: "Project-specific operating policy", RoutePath: "OPERATING.md"}, Document: DocumentSpec{Path: "OPERATING.md", TemplatePath: "addons/operating/OPERATING.md"}},
+	{Addon: Addon{ID: "behavior", Path: "context/behavior.md", Description: "business/domain rules and expected outcomes", RouteNeed: "Business/domain rules, decisions, or state transitions", RoutePath: "context/behavior.md", Default: true}, Document: DocumentSpec{Path: "context/behavior.md", TemplatePath: "addons/behavior/context/behavior.md", ProjectFact: true}},
 	{Addon: Addon{ID: "contracts", Path: "context/contracts.md", Description: "representation and compatibility boundaries", RouteNeed: "Data/API/storage contracts or compatibility changes", RoutePath: "context/contracts.md"}, Document: DocumentSpec{Path: "context/contracts.md", TemplatePath: "addons/contracts/context/contracts.md", ProjectFact: true}},
 	{Addon: Addon{ID: "extending", Path: "context/extending.md", Description: "supported extension points", RouteNeed: "A supported extension point or new capability", RoutePath: "context/extending.md"}, Document: DocumentSpec{Path: "context/extending.md", TemplatePath: "addons/extending/context/extending.md", ProjectFact: true}},
 	{Addon: Addon{ID: "glossary", Path: "context/glossary.md", Description: "project-specific terminology", RouteNeed: "A project-specific or ambiguous term", RoutePath: "context/glossary.md", Default: true}, Document: DocumentSpec{Path: "context/glossary.md", TemplatePath: "addons/glossary/context/glossary.md", ProjectFact: true}},

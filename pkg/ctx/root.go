@@ -112,11 +112,11 @@ The --folder value must be one top-level directory name containing only letters,
 digits, '.', '_', or '-'; nested paths and spaces are not supported by init.
 Team mode (default) leaves durable context visible to Git while local session
 state remains ignored by the scaffold's .gitignore. Local mode excludes the
-whole folder through .git/info/exclude. New scaffolds include the glossary
-add-on by default; use --without glossary for the fixed core alone and --with
-to select other add-ons. In a fresh clone of a team scaffold, init creates only
-the missing ignored local continuation. ctx never stages or commits files.
-Default target is the current directory.`,
+whole folder through .git/info/exclude. New scaffolds include the behavior and
+glossary add-ons by default; use --without behavior,glossary for the fixed core
+alone and --with to select other add-ons. In a fresh clone of a team scaffold,
+init creates only the missing ignored local continuation. ctx never stages or
+commits files. Default target is the current directory.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := "."

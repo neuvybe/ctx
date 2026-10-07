@@ -15,7 +15,7 @@ Canonical owner instructions: {{OWNER_INSTRUCTIONS_PATH}}
 | Need | Read |
 |---|---|
 | First orientation, purpose, scope, or non-goals | `context/overview.md` |
-| Components, entrypoints, flows, invariants, or dependencies | `context/architecture.md` |
+| Components, entrypoints, implementation flows, technical invariants, or dependencies | `context/architecture.md` |
 | Known limitations, operational gotchas, or environment constraints | `context/caveats.md` |
 
 ## Optional routing

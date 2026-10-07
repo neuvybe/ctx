@@ -12,7 +12,7 @@ Every new v2 scaffold contains:
 | `README.md` | ctx-maintained explanation of the scaffold and lifecycle |
 | `INDEX.md` | ctx-maintained hierarchical router plus the owner-instruction pointer |
 | `context/overview.md` | Project purpose, users, capabilities, boundaries, and direction |
-| `context/architecture.md` | Components, entrypoints, flows, invariants, and runtime integrations |
+| `context/architecture.md` | Components, entrypoints, implementation flows, technical invariants, and runtime integrations |
 | `context/caveats.md` | Confirmed limitations, gotchas, and environment constraints |
 | `local/CONTINUE.md` | Machine-local objective, repository position, work state, and next action |
 
@@ -23,13 +23,13 @@ short-lived atomic transaction filenames; durable documents remain visible.
 Local mode additionally writes a whole-folder rule to the repository's common
 `.git/info/exclude`.
 
-The glossary is not part of the fixed core: it remains a catalog add-on so a
-project can omit it. New scaffolds select it by default, however, so a normal
-`ctx init` also writes `context/glossary.md` and records `glossary` in the
+Behavior and glossary remain catalog add-ons so a project can omit either.
+New scaffolds select both by default, so a normal `ctx init` also writes
+`context/behavior.md` and `context/glossary.md` and records both in the
 configuration. Create a core-only scaffold with:
 
 ```bash
-ctx init --without glossary
+ctx init --without behavior,glossary
 ```
 
 ## Add-on catalog
@@ -47,8 +47,9 @@ Add one to an existing v2 scaffold with:
 ctx add [target] <addon...> [--folder .ctx]
 ```
 
-| ID | Output | Default | Concern |
+| Add-on | Output | Default | Concern |
 |---|---|---:|---|
+| `behavior` | `context/behavior.md` | Yes | Business/domain rules, decisions, state transitions, and expected outcomes |
 | `glossary` | `context/glossary.md` | Yes | Ambiguous project-specific terminology |
 | `operating` | `OPERATING.md` | No | Optional owner-ratified working agreement |
 | `contracts` | `context/contracts.md` | No | Representation, interface, and compatibility boundaries |
@@ -58,10 +59,51 @@ ctx add [target] <addon...> [--folder .ctx]
 `ctx add` updates the named INDEX routing block so it names only installed
 add-ons. It does not overwrite an existing add-on output.
 
+## Behavior ownership and hierarchy
+
+`context/behavior.md` explains the business/domain model: concepts and their
+relationships, workflows, decision rules, state transitions, side effects, and
+failure outcomes. Overview owns purpose and scope; architecture owns the
+components and implementation flows that carry out those rules; contracts owns
+interface and representation boundaries.
+
+Keep behavior as a concise parent near 800 words. For deeper explanations,
+create focused children and route to them from the parent:
+
+```text
+context/
+├── behavior.md
+└── behavior/
+    ├── checkout.md
+    ├── subscription-lifecycle.md
+    └── access-rules.md
+```
+
+Only create children that the project needs. Each child describes its scope
+and carries its own `ctx:doc` metadata. INDEX routes behavior tasks to the
+parent first; the parent links to the relevant topic. Keep shared concepts and
+cross-topic rules in the parent and avoid copying implementation details.
+
+Label current implemented behavior separately from intended changes. Cite
+source and tests for observed behavior and canonical owner-approved requirements
+for intended behavior; metadata does not establish that a requirement has been
+implemented. Leave unknowns as draft.
+
+Existing v2 scaffolds retain their configured add-ons during update and
+hydration. After upgrading ctx, explicitly adopt behavior with:
+
+```bash
+ctx update --folder .ctx
+ctx add behavior --folder .ctx
+```
+
+The managed guidance uses template revision `2.0.1`; update older templates
+before installing an add-on. Layout and schema stay at version 2.
+
 ## Project-fact metadata
 
-Core project facts and the `contracts`, `extending`, and `glossary` add-ons begin
-with exactly one metadata line near the top:
+Core project facts and the behavior, contracts, extending, and glossary add-ons
+begin with exactly one metadata line near the top:
 
 ```html
 <!-- ctx:doc {"status":"draft","verifiedAt":"","sources":[]} -->

@@ -11,8 +11,9 @@ team mode, durable files are available for review and sharing while
 
 - `INDEX.md` routes agents to the smallest relevant context set.
 - `context/overview.md`, `architecture.md`, and `caveats.md` hold core project
-  facts. New scaffolds select the glossary add-on by default; other add-ons
-  contribute focused documents only when selected.
+  facts. New scaffolds select behavior and glossary by default: behavior owns
+  business/domain rules and outcomes; glossary clarifies project-specific terms.
+  Other add-ons contribute focused documents when selected.
 - `{{CONTINUE_PATH}}` holds current clone/session state and is never a source of
   durable project truth.
 
