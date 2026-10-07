@@ -107,13 +107,22 @@ On a fresh clone containing committed team context, run `ctx init` again and
 repeat `--folder` when customized. It hydrates the missing ignored continuation
 without rewriting durable files.
 
-Keep `context/behavior.md` as a short parent model. Put detailed rules for a
-workflow or domain under `context/behavior/<topic>.md` and link them from the
-parent. Label implemented behavior separately from intended changes and cite
+ctx generates only the behavior parent, `context/behavior.md`. Keep it as a
+short model. During context filling, the developer or agent can create
+`context/behavior/<topic>.md` for detailed workflow or domain rules and link
+each child from the parent. These project-specific topics are not generated
+by ctx. Label implemented behavior separately from intended changes and cite
 the relevant source, tests, or canonical requirements. Existing scaffolds keep
 their configured add-ons; update and hydration do not install new defaults.
 
 ## Fill and maintain context
+
+ctx includes a portable [ctx skill](skills/ctx/SKILL.md) using the open
+[Agent Skills format](https://agentskills.io/specification), with optional
+OpenAI-specific metadata. Agents can use this separately installed bundle for
+population, task routing, evidence reconciliation, and local handoffs. See
+[activation and the booking demo](docs/agent-skill.md); CLI initialization does
+not install or automatically activate a skill.
 
 Project-fact documents carry one machine-readable metadata line:
 
@@ -148,6 +157,11 @@ git status --short .ctx
 In team mode, a human reviews and chooses whether to stage durable changes;
 `local/` remains ignored. In local mode, the whole selected folder remains
 ignored. See the [fill-context workflow](docs/fill-context-workflow.md).
+
+For a complete populated scaffold and a walkthrough from initialization through
+source changes and fresh-clone handoff, explore the
+[worked example using ctx itself](docs/examples/ctx/README.md). It separates
+generated structure, authored facts, and local session state.
 
 ## Commands
 

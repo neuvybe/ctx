@@ -56,9 +56,12 @@ but new scaffolds select both by default. `--with` and `--without` are repeatabl
 and comma-friendly. The other available add-ons are `operating`, `contracts`,
 `extending`, and `review`.
 
-For large projects, keep `context/behavior.md` concise and route deeper topics
-to `context/behavior/<topic>.md`. Each child carries its own readiness metadata.
-Existing scaffolds retain their selected add-ons until explicitly extended.
+ctx generates only `context/behavior.md`, not a directory of preset topics.
+For large projects, keep this parent concise. During context filling, the
+developer or agent can create project-specific `context/behavior/<topic>.md`
+children and link them from the parent. Each child carries its own readiness
+metadata. Existing scaffolds retain their selected add-ons until explicitly
+extended.
 
 For new initialization, `--folder` accepts one top-level name containing only
 letters, digits, `.`, `_`, or `-`. Repeat a custom `--folder` with later

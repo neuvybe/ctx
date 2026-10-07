@@ -1,0 +1,4 @@
+# Machine-local ctx state. This rule applies in both team and local modes.
+/local/
+# Atomic lifecycle transaction files; these should exist only briefly.
+**/.ctx-update-*

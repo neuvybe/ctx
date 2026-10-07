@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "layoutVersion": 2,
+  "templateRevision": "2.0.1",
+  "project": "ctx",
+  "mode": "team",
+  "addons": [
+    "behavior",
+    "glossary"
+  ]
+}

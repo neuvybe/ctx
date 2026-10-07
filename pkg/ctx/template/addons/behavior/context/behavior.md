@@ -45,10 +45,12 @@
 
 ## Focused behavior routes
 
-> Split a coherent topic into `context/behavior/<topic>.md` when detail outgrows
-> this parent. Give each child its own `ctx:doc` metadata, explain its scope,
-> and link only the relevant children here. Keep the shared model and cross-topic
-> rules in this parent; INDEX routes behavior tasks here first.
+> ctx generates only this parent template. When detail outgrows it, create
+> `context/behavior/` and a focused `<topic>.md` based on the project's actual
+> workflows or rules. Give each child its own `ctx:doc` metadata, explain its
+> scope, fill it from evidence, and link only the relevant children here. Keep
+> the shared model and cross-topic rules in this parent; INDEX routes behavior
+> tasks here first.
 
 | Topic or decision | Read |
 |---|---|

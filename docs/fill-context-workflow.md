@@ -5,6 +5,13 @@ context. The templates are prompts, not answers: an agent must inspect the
 actual repository and record what it verified, what remains draft, and what does
 not apply.
 
+See the [populated ctx example](examples/ctx/README.md) for a complete default
+set, a focused behavior child, a sample local checkpoint, and the lifecycle
+from draft context to verification, maintenance, and fresh-clone hydration.
+
+For reusable agent-facing guidance, see [the ctx skill and activation guide](agent-skill.md).
+Installing a skill is separate from generating or filling a scaffold.
+
 ## 1. Confirm the sharing boundary and selected scope
 
 - `ctx init` defaults to **team mode**: durable files are available to review and
@@ -50,8 +57,10 @@ verify important claims against current source.
 2. **`context/behavior.md`** — core business/domain concepts, relationships,
    workflows, decision rules, state transitions, and expected outcomes. Label
    implemented behavior separately from intended changes and cite code, tests,
-   or canonical owner-approved requirements. Route deeper topics to focused
-   children under `context/behavior/`; each child carries its own metadata.
+   or canonical owner-approved requirements. ctx generates only this parent
+   template. When deeper explanations are needed, the developer or agent creates
+   focused children under `context/behavior/` based on the inspected project,
+   gives each child its own metadata, and links it from the parent.
 3. **`context/architecture.md`** — components, entrypoints, implementation flows,
    technical invariants, state ownership, lifecycle/concurrency where relevant,
    and active runtime integrations. Link to behavior for domain rules and cite
@@ -115,11 +124,13 @@ Useful guidance targets are:
 These are guidance, not hard limits. For the listed mechanics and project-fact
 documents, `ctx status` emits non-failing warnings only around twice those sizes
 so legitimate project complexity is not marked unhealthy. When a file grows,
-split a coherent child document and route to it
-from INDEX's project-owned routing section rather than flattening all detail
-into the always-read path. Lifecycle updates preserve that section. Put the same
+create a coherent child document and link it from its parent. For behavior,
+INDEX routes to `context/behavior.md` first, and that parent routes to the
+relevant children. Use INDEX's project-owned routing section for additional
+direct routes when useful; lifecycle updates preserve that section. Put the same
 `ctx:doc` metadata line on each nested project-fact Markdown document so status
-tracks it too.
+tracks it too. Creating these project-specific children is part of context
+authoring, not a ctx scaffold-generation command.
 
 ## 6. Check structure separately from readiness
 

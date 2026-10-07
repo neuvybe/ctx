@@ -67,8 +67,19 @@ failure outcomes. Overview owns purpose and scope; architecture owns the
 components and implementation flows that carry out those rules; contracts owns
 interface and representation boundaries.
 
-Keep behavior as a concise parent near 800 words. For deeper explanations,
-create focused children and route to them from the parent:
+With behavior selected, `ctx init` generates the parent template;
+`ctx add behavior` installs the same template in an existing scaffold. The
+generated behavior subtree is:
+
+```text
+context/
+└── behavior.md
+```
+
+Keep this parent near 800 words. During context filling, the developer or agent
+can create `context/behavior/` and focused child documents based on the
+project's actual workflows and rules. ctx does not generate these topics.
+For example, an application with checkout and subscriptions might grow into:
 
 ```text
 context/
@@ -79,10 +90,13 @@ context/
     └── access-rules.md
 ```
 
-Only create children that the project needs. Each child describes its scope
-and carries its own `ctx:doc` metadata. INDEX routes behavior tasks to the
-parent first; the parent links to the relevant topic. Keep shared concepts and
+Only create children that the project needs. Fill each child from evidence,
+describe its scope, add its own `ctx:doc` metadata, and link it from the parent's
+Focused behavior routes section. INDEX routes behavior tasks to the parent
+first; the parent links to the relevant topic. Keep shared concepts and
 cross-topic rules in the parent and avoid copying implementation details.
+`ctx status` includes nested Markdown documents; run it and `ctx doctor` after
+adding or editing children.
 
 Label current implemented behavior separately from intended changes. Cite
 source and tests for observed behavior and canonical owner-approved requirements
