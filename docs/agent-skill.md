@@ -73,7 +73,7 @@ Check that the skill is visible in the host's selector and that a run actually
 reads `SKILL.md`. Do not assume discovery from an arbitrary `.ctx/skills/`
 location or a file name alone. For other hosts, use their supported skill
 loading mechanism and explicitly test activation; this repository does not
-claim those integrations have been exercised.
+claim native discovery or automatic selection has been tested in those hosts.
 
 Automatic matching remains allowed, but is not a substitute for testing.
 If the repository owner wants a durable activation reminder, they can add a
@@ -91,6 +91,10 @@ Verified metadata refers to a real source commit and listed paths. If relevant
 source changes are uncommitted, affected facts remain draft even after checking
 the new behavior. The agent reports the pending commit rather than creating one
 or stamping an old HEAD solely to make status pass.
+Draft facts retain known relevant source paths. Evidence descriptions distinguish
+implementation reasoning, direct test assertions, and owner-approved decisions;
+unknown acceptance is recorded rather than invented. Readers check material
+coverage/approval claims before relying on them.
 
 The skill treats doctor as structural checking, status as evidence/readiness
 checking, and update as managed-guidance refresh. None is an independent
@@ -155,6 +159,12 @@ agent/model behaves the same.
 The [first recorded run](../evals/ctx-skill/results.md) passed population,
 read-only, and uncommitted-evidence checks. The unassisted baseline also passed;
 the run does not establish a skill advantage.
+
+Later explicit Pi runs are documented in the
+[evidence retest](../evals/ctx-skill/evidence-retest.md) and
+[focused reader comparison](../evals/ctx-skill/evidence-review-results.md).
+They observed skill reads and useful corrections, but also remaining semantic
+errors. They do not establish native Pi discovery or automatic skill selection.
 
 Native host discovery and metadata-based selection are different checks. A
 subagent supplied with skill metadata can test its routing choice, but cannot

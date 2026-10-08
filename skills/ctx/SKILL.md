@@ -43,6 +43,9 @@ Treat `draft` facts as leads and `verified` facts as scoped to their recorded
 commit and sources. Check relevant evidence against current source/tests,
 especially when metadata is stale, missing, or contradicted. Context is not
 permission to skip source inspection before a consequential change.
+When an explanation depends on a claim about test coverage or owner approval,
+use the evidence-review pass below. Valid metadata and passing tests are not
+substitutes for checking that claim.
 
 ## Populate or extend facts
 
@@ -66,6 +69,8 @@ scope. Fill installed documents by ownership:
 Do not silently add omitted documents or manufacture requirements. Distinguish
 implemented behavior from owner-approved intended changes; source, tests,
 and canonical requirements are evidence for different claims.
+An observed limitation is not an accepted tradeoff without an owner decision
+or explicit requirement. Record "owner decision not documented" when unknown.
 
 Remove filled template prompts and inapplicable sections. Keep parent summaries
 short; prefer linking canonical detail over copying it. If a coherent topic
@@ -86,7 +91,8 @@ one metadata line:
 - Use `verified` only after checking claims. Record an actual immutable source
   commit as `<commit-hash> @ YYYY-MM-DD` and supporting repository-relative paths
   in `sources`. Paths are relative to the target repository, not the context
-  folder. Do not cite the fact document itself as evidence.
+  folder. Include supporting files cited in the prose, not just the main source
+  file. Do not cite the fact document itself as evidence.
 - Listed sources must be tracked at that commit and match current evidence.
   Check relevant working-tree/staged changes as well as HEAD. Uncommitted source
   changes cannot be certified by stamping the old HEAD hash; leave affected
@@ -94,8 +100,32 @@ one metadata line:
   readiness pass.
 - Use `draft` for unknown, incomplete, inferred, changed, or unverified claims.
   Mark affected facts draft while reconciling them; uncertainty is a valid result.
+  Clear `verifiedAt`, but retain known relevant `sources`. Revise paths when
+  evidence changes; do not empty the list merely because work is uncommitted.
 - Use `not-applicable` only for a genuinely irrelevant installed concern, with
   a brief reason. Do not use it to suppress unfinished work.
+
+## Review material evidence claims
+
+Before certifying authored facts or repeating material context claims, make a
+brief claim-to-evidence pass for the relevant topic; no extra document is needed.
+
+1. Identify the claim and its basis: implementation reasoning, a direct test
+   assertion, or an owner requirement/decision. Read that evidence, not just
+   the context's description of it.
+2. For a "tested" claim, inspect the setup and assertions: which cases, fields,
+   and state are checked, and when? A check at the end of several operations is
+   not a check after each one. Test names and comments do not extend assertion
+   coverage; an error assertion alone does not check unchanged state. Passing
+   tests or statement coverage does not establish exhaustive behavioral coverage.
+3. Match the wording to that scope and reconcile supporting files with metadata
+   `sources`. Narrow an overclaim to the actual asserted case or to "follows
+   from implementation"; report missing evidence or owner decisions as unknown.
+
+Preserve supported behavior even when its claimed test coverage is overstated.
+For read-only tasks, report discrepancies and proposed corrections without
+editing. For authorized maintenance, correct the owning facts within scope;
+do not add tests or owner decisions just to make a sentence true.
 
 ## Maintain and hand off
 
