@@ -136,6 +136,10 @@ point. Use `not-applicable` deliberately rather than filling an
 irrelevant document with boilerplate. `draft` facts are leads to verify, not
 authority.
 
+For consequential new or changed guarantees, use the
+[recommended maintainer checkpoint](docs/fill-context-workflow.md#recommended-maintainer-checkpoint).
+Verified metadata records scoped evidence checking, not human approval.
+
 Use the checks for their distinct purposes:
 
 - `ctx doctor [target] [--folder .ctx]` validates scaffold structure, layout

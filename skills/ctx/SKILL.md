@@ -92,7 +92,8 @@ one metadata line:
   commit as `<commit-hash> @ YYYY-MM-DD` and supporting repository-relative paths
   in `sources`. Paths are relative to the target repository, not the context
   folder. Include supporting files cited in the prose, not just the main source
-  file. Do not cite the fact document itself as evidence.
+  file. Do not cite the fact document itself as evidence. This records scoped
+  evidence checking, not automatic human approval.
 - Listed sources must be tracked at that commit and match current evidence.
   Check relevant working-tree/staged changes as well as HEAD. Uncommitted source
   changes cannot be certified by stamping the old HEAD hash; leave affected
@@ -107,20 +108,25 @@ one metadata line:
 
 ## Review material evidence claims
 
-Before certifying authored facts or repeating material context claims, make a
-brief claim-to-evidence pass for the relevant topic; no extra document is needed.
+For an evidence review, before declaring authored facts verified, or when a
+task relies on a material coverage/approval claim, read
+[the evidence-audit contract](references/evidence-review.md). Produce a compact
+audit in the review output: each material claim, its evidence basis and exact
+scope, and a verdict. Split compound claims; support for one part does not
+certify another. Account for unresolved claims rather than concluding that
+everything else matches without checking it.
 
-1. Identify the claim and its basis: implementation reasoning, a direct test
-   assertion, or an owner requirement/decision. Read that evidence, not just
-   the context's description of it.
-2. For a "tested" claim, inspect the setup and assertions: which cases, fields,
-   and state are checked, and when? A check at the end of several operations is
-   not a check after each one. Test names and comments do not extend assertion
-   coverage; an error assertion alone does not check unchanged state. Passing
-   tests or statement coverage does not establish exhaustive behavioral coverage.
-3. Match the wording to that scope and reconcile supporting files with metadata
-   `sources`. Narrow an overclaim to the actual asserted case or to "follows
-   from implementation"; report missing evidence or owner decisions as unknown.
+Scope the audit to the requested topic or affected facts, not the whole
+repository on every context read. Reconcile supporting files with metadata
+`sources`. A read-only citation helper can check explicitly labelled paths when
+Node.js is available; it does not decide whether evidence supports the wording.
+
+Surface newly authored or materially changed consequential guarantees as
+maintainer-review candidates, with their exact wording and supporting evidence.
+The reference describes a recommended human checkpoint, not a CLI requirement.
+When the user requests it or owner instructions require it, keep affected fact
+documents draft until that source-level review is complete. Do not infer human
+approval from verified metadata, passing checks, or agreement between models.
 
 Preserve supported behavior even when its claimed test coverage is overstated.
 For read-only tasks, report discrepancies and proposed corrections without

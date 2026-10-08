@@ -124,6 +124,42 @@ with metadata. Keep supported behavior; report missing evidence separately.
 This is a brief review pass, not another default document or permission to
 add tests, owner policy, or edits during a read-only task.
 
+For requested evidence review or before declaring authored facts verified,
+make that pass inspectable in the review output: record each material claim,
+its owning document, implementation/test/owner basis, exact supporting evidence
+and limits, and a supported/narrow/unresolved verdict. Split compound claims;
+state what was not checked rather than certifying it by omission. Scope this to
+the relevant topic, not every sentence during ordinary context consumption.
+The [skill's evidence-audit contract](../skills/ctx/references/evidence-review.md)
+includes an optional read-only checker for explicitly labelled evidence paths.
+It checks citation bookkeeping only, not prose truth or citation completeness.
+
+### Recommended maintainer checkpoint
+
+For newly authored or materially changed claims that readers might treat as
+consequential guarantees, recommend a human source-level checkpoint during
+normal code/context review. Focus on persistence and recovery, security/access,
+business rules and public contracts, broad failure/test-coverage assertions,
+and decisions attributed to the owner. This is not approval of every sentence
+or a repeat review of unchanged facts whenever another document changes.
+
+The agent prepares the bounded audit, proposes precise wording, runs available
+checks, and identifies pending review. The maintainer checks the final wording
+and any proposed corrections against the cited implementation, test assertions,
+or documented requirements at the source commit. Preserve supported behavior
+when test-coverage wording needs narrowing; lack of a direct test does not by
+itself establish a bug. Passing checks or model agreement cannot replace this
+source-level check.
+
+When this checkpoint is requested or owner-required, leave affected documents
+draft until it is complete, with `verifiedAt` cleared and relevant sources
+retained. A document-level status cannot certify only its reviewed sentences.
+Use the existing review process to record scope and approval, not a new default
+context document. `verified` records scoped evidence checking, not human
+approval; ctx neither records nor enforces that checkpoint. The skill must not
+invent owner policy to impose it. See the
+[detailed checkpoint guidance](../skills/ctx/references/evidence-review.md#recommended-maintainer-checkpoint).
+
 ## 5. Keep context hierarchical and bounded
 
 Prefer a short parent summary that routes to detail. Link canonical documentation

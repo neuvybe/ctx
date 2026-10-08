@@ -70,9 +70,37 @@ test("rejects invalid paths and unavailable CLI before creating a destination", 
     ["--destination", destination, "--ctx", "relative-ctx"],
     ["--destination", destination, "--ctx", join(root, "missing-ctx")],
     ["--destination", destination, "--ctx", join(root, "missing-ctx"), "--unknown", "value"],
+    ["--destination", destination, "--ctx", join(root, "missing-ctx"), "--fixture", "unknown-demo"],
   ]) {
     const result = spawnSync(process.execPath, [helper, ...args], { encoding: "utf8" });
     assert.notEqual(result.status, 0);
     await assert.rejects(stat(destination), { code: "ENOENT" });
   }
+});
+
+test("prepares the settings transfer fixture with a real process test and a detectable citation gap", async t => {
+  const root = await mkdtemp(join(await realpath(tmpdir()), "ctx-settings-review-test-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const cli = join(root, "ctx");
+  execFileSync("go", ["build", "-o", cli, "./cmd/ctx"], { cwd: repository });
+  const destination = join(root, "settings");
+  const args = [helper, "--destination", destination, "--ctx", cli, "--fixture", "settings-demo"];
+  const prepared = JSON.parse(execFileSync(process.execPath, args, { encoding: "utf8" }));
+  for (const file of ["README.md", "go.mod", "AGENTS.md", "docs/requirements.md", "docs/storage.md", "settings/store.go", "settings/store_test.go"]) {
+    assert.deepEqual(await readFile(join(destination, file)), await readFile(join(repository, "testdata/settings-demo", file)));
+  }
+  assert.equal(git(destination, "rev-parse", "HEAD"), prepared.sourceCommit);
+  assert.equal(git(destination, "diff"), "");
+  assert.equal(git(destination, "diff", "--cached"), "");
+  assert.equal(git(destination, "status", "--porcelain"), "?? .agent/");
+  for (const command of ["doctor", "status"]) execFileSync(cli, [command, destination, "--folder", ".agent"]);
+  execFileSync("go", ["test", "-race", "./..."], { cwd: destination });
+  const check = spawnSync(process.execPath, [join(destination, ".agents/skills/ctx/scripts/check-evidence-citations.mjs"), "--repo", destination, "--folder", ".agent"], { encoding: "utf8" });
+  assert.equal(check.status, 1);
+  const report = JSON.parse(check.stdout);
+  assert.equal(report.checkedCitations, 14);
+  assert.deepEqual(report.documents.flatMap(result => result.issues).map(issue => [issue.path, issue.detail]), [["docs/storage.md", "not covered by metadata sources"]]);
+  const before = await readFile(join(destination, ".agent/context/behavior.md"));
+  assert.notEqual(spawnSync(process.execPath, args, { encoding: "utf8" }).status, 0);
+  assert.deepEqual(await readFile(join(destination, ".agent/context/behavior.md")), before);
 });

@@ -18,7 +18,10 @@ The maintained bundle lives at `skills/ctx/`:
 skills/ctx/
 ├── SKILL.md
 ├── references/
-│   └── cli.md
+│   ├── cli.md
+│   └── evidence-review.md
+├── scripts/
+│   └── check-evidence-citations.mjs
 └── agents/
     └── openai.yaml
 ```
@@ -95,6 +98,21 @@ Draft facts retain known relevant source paths. Evidence descriptions distinguis
 implementation reasoning, direct test assertions, and owner-approved decisions;
 unknown acceptance is recorded rather than invented. Readers check material
 coverage/approval claims before relying on them.
+Evidence reviews and certification report a bounded claim audit, separating
+implementation, direct assertions, and owner decisions. Quantified and lifecycle
+test claims include an operation/assertion inventory before drawing conclusions.
+The portable skill
+includes a focused review reference and an optional Node.js citation helper;
+no new default document or metadata field is required. The helper checks only
+explicit `Evidence source:` lines, not semantic accuracy or all prose citations.
+
+For consequential new or materially changed guarantees, the skill surfaces
+maintainer-review candidates. The
+[recommended checkpoint](fill-context-workflow.md#recommended-maintainer-checkpoint)
+uses normal source-level review, not blanket approval of every context edit.
+When requested or owner-required, pending review keeps affected documents draft.
+Verified metadata does not record human approval; no new CLI gate or owner
+policy is installed.
 
 The skill treats doctor as structural checking, status as evidence/readiness
 checking, and update as managed-guidance refresh. None is an independent
@@ -165,6 +183,11 @@ Later explicit Pi runs are documented in the
 [focused reader comparison](../evals/ctx-skill/evidence-review-results.md).
 They observed skill reads and useful corrections, but also remaining semantic
 errors. They do not establish native Pi discovery or automatic skill selection.
+The later [claim-audit results](../evals/ctx-skill/claim-audit-results.md) preserve
+repeat failures and separate independent checks from assisted reconciliation.
+The [maintainer-checkpoint comparison](../evals/ctx-skill/maintainer-checkpoint-results.md)
+records a useful required-review contrast, persistent factual errors, and
+inconclusive interrupted trials; it does not establish autonomous verification.
 
 Native host discovery and metadata-based selection are different checks. A
 subagent supplied with skill metadata can test its routing choice, but cannot

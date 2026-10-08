@@ -119,3 +119,13 @@ semantic failure independently of implementation work. Its evaluator fixture
 mixes supported behavior with unsupported evidence descriptions while source,
 tests, doctor, and status pass. Keep the answer key outside the reader's scope
 and compare explanations and complete read-only audits, not matching phrases.
+The [claim-audit alignment protocol](claim-audit.md) adds an observable audit
+contract, a new settings transfer fixture, and repeated fresh-session checks.
+Its [recorded results](claim-audit-results.md) retain regressions and distinguish
+independent review from assisted cross-review.
+
+The [maintainer-checkpoint comparison](maintainer-checkpoint.md) evaluates old
+and new skill versions with required-review and ordinary maintenance conditions,
+including a GPT 6.1 Sol agent. Its
+[results](maintainer-checkpoint-results.md) separate approval-boundary behavior,
+source accuracy, scope violations, and retained runtime interruptions.

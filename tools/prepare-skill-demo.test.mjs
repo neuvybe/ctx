@@ -30,7 +30,7 @@ test("materializes a clean standalone demo with optional repo-local skill", asyn
     await assert.rejects(stat(join(destination, ".agent")), { code: "ENOENT" });
     if (withSkill) {
       assert.equal(result.skill, join(destination, ".agents", "skills", "ctx", "SKILL.md"));
-      for (const file of ["SKILL.md", "references/cli.md", "agents/openai.yaml"]) {
+      for (const file of ["SKILL.md", "references/cli.md", "references/evidence-review.md", "scripts/check-evidence-citations.mjs", "agents/openai.yaml"]) {
         assert.equal(
           await readFile(join(destination, ".agents", "skills", "ctx", file), "utf8"),
           await readFile(join(repository, "skills", "ctx", file), "utf8"),

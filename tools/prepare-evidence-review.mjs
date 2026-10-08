@@ -10,13 +10,15 @@ const options = new Map();
 const args = process.argv.slice(2);
 for (let index = 0; index < args.length; index += 2) {
   const key = args[index];
-  if (!["--destination", "--ctx"].includes(key) || !args[index + 1] || options.has(key)) {
-    throw new Error("Usage: node tools/prepare-evidence-review.mjs --destination /absolute/new/path --ctx /absolute/ctx");
+  if (!["--destination", "--ctx", "--fixture"].includes(key) || !args[index + 1] || options.has(key)) {
+    throw new Error("Usage: node tools/prepare-evidence-review.mjs --destination /absolute/new/path --ctx /absolute/ctx [--fixture booking-demo|settings-demo]");
   }
   options.set(key, args[index + 1]);
 }
 const destination = options.get("--destination");
 const cli = options.get("--ctx");
+const fixtureName = options.get("--fixture") || "booking-demo";
+if (!["booking-demo", "settings-demo"].includes(fixtureName)) throw new Error("--fixture must be booking-demo or settings-demo");
 if (!destination || !isAbsolute(destination) || !cli || !isAbsolute(cli)) {
   throw new Error("--destination and --ctx must be absolute paths; destination must not exist");
 }
@@ -24,14 +26,15 @@ if (!destination || !isAbsolute(destination) || !cli || !isAbsolute(cli)) {
 // fresh-directory checks and records only the demo baseline commit.
 execFileSync(cli, ["--version"], { stdio: ["ignore", "pipe", "pipe"] });
 const prepared = JSON.parse(execFileSync(process.execPath, [
-  join(repository, "tools/prepare-skill-demo.mjs"), "--destination", destination, "--with-skill",
+  join(repository, "tools/prepare-skill-demo.mjs"), "--destination", destination, "--with-skill", "--fixture", fixtureName,
 ], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }));
 execFileSync(cli, ["init", prepared.repository, "--folder", ".agent", "--mode", "team"], {
   stdio: ["ignore", "pipe", "pipe"],
 });
 const verifiedOn = new Date().toISOString().slice(0, 10);
 for (const name of ["overview", "behavior", "architecture", "caveats", "glossary"]) {
-  const template = await readFile(join(repository, "evals/ctx-skill/fixtures/evidence-review", name + ".md"), "utf8");
+  const fixtureDirectory = fixtureName === "booking-demo" ? "evidence-review" : "settings-review";
+  const template = await readFile(join(repository, "evals/ctx-skill/fixtures", fixtureDirectory, name + ".md"), "utf8");
   const rendered = template.replaceAll("{{SOURCE_COMMIT}}", prepared.sourceCommit)
     .replaceAll("{{VERIFIED_DATE}}", verifiedOn);
   await writeFile(join(prepared.repository, ".agent/context", name + ".md"), rendered);

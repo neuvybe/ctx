@@ -9,13 +9,16 @@ const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 let destination;
 let withSkill = false;
+let fixtureName = "booking-demo";
 for (let index = 0; index < args.length; index++) {
   if (args[index] === "--destination" && args[index + 1]) {
     destination = args[++index];
   } else if (args[index] === "--with-skill") {
     withSkill = true;
+  } else if (args[index] === "--fixture" && ["booking-demo", "settings-demo"].includes(args[index + 1])) {
+    fixtureName = args[++index];
   } else {
-    throw new Error("Usage: node tools/prepare-skill-demo.mjs --destination /absolute/new/path [--with-skill]");
+    throw new Error("Usage: node tools/prepare-skill-demo.mjs --destination /absolute/new/path [--with-skill] [--fixture booking-demo|settings-demo]");
   }
 }
 if (!destination || !isAbsolute(destination)) {
@@ -33,7 +36,7 @@ try {
 await mkdir(destination);
 // Claim the root with mkdir, then copy into absent child paths. Copying the
 // fixture onto that existing root with errorOnExist is rejected by newer Node.
-const fixture = join(repository, "testdata", "booking-demo");
+const fixture = join(repository, "testdata", fixtureName);
 for (const entry of await readdir(fixture)) {
   await cp(join(fixture, entry), join(destination, entry), {
     recursive: true, force: false, errorOnExist: true,
@@ -54,7 +57,7 @@ const git = (...arguments_) => execFileSync("git", [
 git("init", "-q");
 git("add", ".");
 git("-c", "user.name=ctx-demo", "-c", "user.email=ctx-demo@example.invalid",
-  "-c", "commit.gpgsign=false", "commit", "-qm", "record booking demo baseline");
+  "-c", "commit.gpgsign=false", "commit", "-qm", "record " + fixtureName.replace("-", " ") + " baseline");
 console.log(JSON.stringify({
   repository: destination,
   sourceCommit: git("rev-parse", "HEAD"),
