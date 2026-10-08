@@ -8,6 +8,9 @@
 > paths. Distinguish product behavior from environment/tooling constraints. If
 > there are no material caveats, use `not-applicable` and state why. Remove
 > resolved entries once their history belongs in a changelog, issue, or ADR.
+> Observed behavior does not establish owner acceptance. Use "accepted
+> limitation" only with an explicit requirement or decision record. Describe
+> what the evidence establishes; a passing test is not proof of every invariant.
 
 ## Active caveats
 
@@ -18,7 +21,8 @@
 - **Symptom:** what an agent or developer will observe
 - **Evidence:** source path, test, issue, or reproducible command
 - **Workaround:** safe current response, if one exists
-- **Owner decision:** accepted tradeoff or intended direction, with a pointer
+- **Owner decision (if documented):** requirement or decision pointer; otherwise
+  "owner decision not documented" (do not infer acceptance)
 
 ## Environment and tooling constraints
 

@@ -6,15 +6,22 @@ on:
 
 jobs:
   quality:
-    name: Go vet + test + build
+    name: Go and demo quality checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v7
         with: { go-version-file: go.mod }
+      - uses: actions/setup-node@v6
+        with: { node-version: '24' }
       - run: go vet ./...
       - run: go test -race ./...
       - run: go build -o /dev/null ./cmd/ctx
+      - run: go test -race ./...
+        working-directory: testdata/booking-demo
+      - run: go vet ./... && go test -race ./...
+        working-directory: testdata/settings-demo
+      - run: node --test tools/prepare-skill-demo.test.mjs tools/prepare-evidence-review.test.mjs tools/check-evidence-citations.test.mjs
 
   commitlint:
     name: Conventional commits
