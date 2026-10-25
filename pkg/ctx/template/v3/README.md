@@ -1,0 +1,39 @@
+# `{{FOLDER}}/` — agent context for {{PROJECT}}
+
+<!-- ctx:managed begin readme-platform -->
+This folder keeps durable project facts with explicit readiness separate from
+machine-local working state. The active visibility mode is **`{{MODE}}`**. In
+team mode, durable files are available for review and sharing while
+`{{CONTINUE_PATH}}` stays ignored. In local mode, Git ignores the whole folder.
+`ctx` never stages or commits files.
+
+## Contents
+
+- `INDEX.md` routes agents to the smallest relevant context set.
+- `context/overview/index.md`, `context/architecture/index.md`, and
+  `context/caveats/index.md` hold concise core summaries and routes. New scaffolds select behavior and glossary by default: behavior owns
+  business/domain rules and outcomes; glossary clarifies project-specific terms.
+  Each selected fact category has an `index.md`; other add-ons contribute
+  focused documents when selected. During population, give independently useful
+  explanations their own topic files rather than waiting for a size warning.
+  Keep genuinely short related definitions together. No topic stubs are generated.
+- `{{CONTINUE_PATH}}` holds current clone/session state and is never a source of
+  durable project truth.
+
+Read the project owner's canonical instructions first, then any optional
+`OPERATING.md`, `{{CONTINUE_PATH}}`, `INDEX.md`, and only the fact documents the
+task needs.
+
+## Maintenance
+
+- Keep each fact document's `ctx:doc` metadata honest: `draft`, `verified`, or
+  `not-applicable`; verification records a commit/date and source paths.
+- Run `ctx doctor --folder {{FOLDER}}` for scaffold and Git-boundary checks.
+  Run `ctx status --folder {{FOLDER}}` for content-readiness and size guidance.
+- Run `ctx update --folder {{FOLDER}}` after upgrading ctx, then review changes.
+- Treat ignored context as private from Git, not as secret storage.
+<!-- ctx:managed end readme-platform -->
+
+## Project-owned pointer
+
+Canonical owner instructions: {{OWNER_INSTRUCTIONS_PATH}}

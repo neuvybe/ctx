@@ -40,7 +40,8 @@ func newAddCmd() *cobra.Command {
 		Use:   "add [target-repo] <addon[,addon...]> [addon...]",
 		Short: "List or install optional context add-ons",
 		Long: `List the built-in add-on catalog or install one or more focused
-documents into an existing layout-v2 scaffold. When the first positional
+documents into an existing layout-v2/v3 scaffold. Paths follow that scaffold's
+persisted layout; --list shows the default layout's paths. When the first positional
 argument is a known add-on ID, all arguments are installed in the current
 directory. Otherwise, with two or more arguments, the first is the target
 repository. Prefix a repository path such as ./contracts if its name is also
@@ -111,7 +112,8 @@ func newInitCmd() *cobra.Command {
 The --folder value must be one top-level directory name containing only letters,
 digits, '.', '_', or '-'; nested paths and spaces are not supported by init.
 Team mode (default) leaves durable context visible to Git while local session
-state remains ignored by the scaffold's .gitignore. Local mode excludes the
+state remains ignored by the scaffold's .gitignore. New fact documents use
+context/<category>/index.md with room for focused topic files. Local mode excludes the
 whole folder through .git/info/exclude. New scaffolds include the behavior and
 glossary add-ons by default; use --without behavior,glossary for the fixed core
 alone and --with to select other add-ons. In a fresh clone of a team scaffold,
@@ -223,9 +225,9 @@ func newUpdateCmd() *cobra.Command {
 		Short: "Refresh managed blocks in a repo's context folder",
 		Long: `Refresh the platform-managed documents declared by the scaffold's
 persisted layout and add-ons, preserving all user content outside managed
-blocks. Layout v2 matches strict named blocks and advances templateRevision;
+blocks. Layouts v2 and v3 match strict named blocks and advance their own templateRevision;
 layout v1 retains its frozen unnamed-marker and .ctx-version behavior. Default
-target is the current directory.`,
+target is the current directory. Update does not convert layouts or move facts.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := "."

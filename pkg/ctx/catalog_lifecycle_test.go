@@ -16,6 +16,7 @@ func TestLayoutCatalogOutputsAndManagedTemplatesAreCoherent(t *testing.T) {
 		addons []string
 	}{
 		{layout: LegacyLayoutVersion},
+		{layout: FlatLayoutVersion, addons: allAddons},
 		{layout: CurrentLayoutVersion, addons: allAddons},
 	}
 	for _, tt := range tests {

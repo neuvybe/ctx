@@ -185,7 +185,7 @@ func TestAddCommandListsAndInstallsAddon(t *testing.T) {
 	if !strings.Contains(output.String(), "installed add-on(s) glossary") {
 		t.Fatalf("add output missing result:\n%s", output.String())
 	}
-	if _, err := os.Stat(filepath.Join(repo, ".ctx", "context", "glossary.md")); err != nil {
+	if _, err := os.Stat(filepath.Join(repo, ".ctx", "context", "glossary", "index.md")); err != nil {
 		t.Fatalf("glossary not installed: %v", err)
 	}
 }

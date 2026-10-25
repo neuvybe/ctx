@@ -30,7 +30,7 @@ func TestParseConfigNormalizesSchemaOneAsLayoutOne(t *testing.T) {
 func TestConfigSchemaTwoRoundTripCanonicalizesAddons(t *testing.T) {
 	want := Config{
 		SchemaVersion:    currentSchemaVersion,
-		LayoutVersion:    CurrentLayoutVersion,
+		LayoutVersion:    FlatLayoutVersion,
 		TemplateRevision: "2.0.0",
 		Project:          "example",
 		Mode:             ModeLocal,
@@ -67,6 +67,7 @@ func TestConfigSchemaTwoRoundTripCanonicalizesAddons(t *testing.T) {
 func TestParseConfigRejectsMalformedOrUnsupportedDescriptors(t *testing.T) {
 	tests := map[string]string{
 		"unknown schema":        `{"schemaVersion":3,"mode":"team"}`,
+		"future layout":         `{"schemaVersion":2,"layoutVersion":4,"templateRevision":"4.0.0","project":"p","mode":"team"}`,
 		"missing layout":        `{"schemaVersion":2,"templateRevision":"2.0.0","project":"p","mode":"team"}`,
 		"missing revision":      `{"schemaVersion":2,"layoutVersion":2,"project":"p","mode":"team"}`,
 		"missing project":       `{"schemaVersion":2,"layoutVersion":2,"templateRevision":"2.0.0","mode":"team"}`,
@@ -93,17 +94,17 @@ func TestCatalogCoreAndAddonSelection(t *testing.T) {
 		paths = append(paths, document.Path)
 	}
 	want := []string{
-		"README.md", "INDEX.md", "context/overview.md", "context/architecture.md",
-		"context/caveats.md", "local/CONTINUE.md", "context/glossary.md", "workflows/review.md",
+		"README.md", "INDEX.md", "context/overview/index.md", "context/architecture/index.md",
+		"context/caveats/index.md", "local/CONTINUE.md", "context/glossary/index.md", "workflows/review.md",
 	}
 	if !reflect.DeepEqual(paths, want) {
 		t.Fatalf("document paths = %v, want %v", paths, want)
 	}
-	routes, err := addonRoutesMarkdown([]string{"review", "glossary"})
+	routes, err := addonRoutesMarkdown(CurrentLayoutVersion, []string{"review", "glossary"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(routes, "context/glossary.md") || !strings.Contains(routes, "workflows/review.md") {
+	if !strings.Contains(routes, "context/glossary/index.md") || !strings.Contains(routes, "workflows/review.md") {
 		t.Fatalf("routes missing selected add-ons:\n%s", routes)
 	}
 	if strings.Contains(routes, "OPERATING.md") {

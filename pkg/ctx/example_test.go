@@ -191,7 +191,7 @@ func TestPopulatedContextExampleLifecycle(t *testing.T) {
 	runExampleCommand(t, true, "init", draftRepo)
 	runExampleCommand(t, true, "doctor", draftRepo)
 	draft := runExampleCommand(t, false, "status", draftRepo)
-	if !strings.Contains(draft, "✗ context/behavior.md — draft") || !strings.Contains(draft, "✗ context/glossary.md — draft") {
+	if !strings.Contains(draft, "✗ context/behavior/index.md — draft") || !strings.Contains(draft, "✗ context/glossary/index.md — draft") {
 		t.Fatalf("generated context does not match the draft output shown in the walkthrough:\n%s", draft)
 	}
 

@@ -1,0 +1,167 @@
+[
+  {
+    "category": "overview",
+    "name": "purpose",
+    "title": "Purpose and boundaries",
+    "summary": "What ctx supplies, and what remains agent or owner work.",
+    "sources": [
+      "README.md",
+      "pkg/ctx/init.go"
+    ],
+    "body": "ctx supplies a repository-local structure for durable project facts and clone-local working state. It does not derive application facts simply by initializing templates. An agent or developer must inspect source, tests, and canonical requirements to populate useful context. Team mode exposes durable context to normal Git review and tracking; local mode excludes the whole selected folder through the repository's common exclude file. Neither mode asks ctx to stage or commit facts. Owner instructions govern context use. Context is supporting evidence and navigation, not an authority above current implementation or owner-approved requirements. A continuation belongs to one clone or session; it is not the durable record for shared business rules."
+  },
+  {
+    "category": "glossary",
+    "name": "hydration",
+    "title": "Hydration",
+    "summary": "The meaning of hydration, distinct from regeneration or conversion.",
+    "sources": [
+      "pkg/ctx/init.go"
+    ],
+    "body": "Hydration means recreating the missing ignored local continuation in an otherwise complete existing team scaffold. It is not a refresh of shared fact prose, installation of new default add-ons, sharing-mode conversion, or layout migration. Init loads the persisted configuration, checks the existing outputs and Git boundaries, and renders the continuation selected by that layout. A fresh clone can lack local/CONTINUE.md precisely because that state is ignored. A present continuation is not overwritten. This meaning is narrower than regenerating a context folder: shared README, INDEX, facts, authored children, selected add-ons, and saved layout stay in place."
+  },
+  {
+    "category": "glossary",
+    "name": "verification",
+    "title": "Verified fact",
+    "summary": "What a verification stamp establishes and does not establish.",
+    "sources": [
+      "pkg/ctx/status.go",
+      "skills/ctx/references/evidence-review.md"
+    ],
+    "body": "A verified stamp records evidence checking at an immutable source commit and date with repository-relative supporting sources. It does not record actual human approval, semantic truth established by the CLI, or a timeless guarantee. An accurately scoped statement can explain that a behavior follows from implementation but is not directly tested. Draft facts remain leads to verify, even if their prose appears polished. The JSON status is document-level: it cannot certify only selected reviewed sentences. A parent's stamp is not inherited by linked topics. A requested or owner-required source-level maintainer checkpoint can keep consequential changed claims draft while review is pending."
+  },
+  {
+    "category": "glossary",
+    "name": "layout",
+    "title": "Layout, schema, and template revision",
+    "summary": "Separate persisted structure, config encoding, and managed guidance.",
+    "sources": [
+      "pkg/ctx/catalog.go",
+      "pkg/ctx/config.go"
+    ],
+    "body": "Layout version selects required paths and corresponding template assets. Config schema describes configuration encoding. Template revision identifies managed template guidance within a layout; it is not the CLI release number. Layout v2 uses flat context/<category>.md parents and template revision 2.0.1. Layout v3 uses context/<category>/index.md and template revision 3.0.0. Both use config schema 2 and named managed markers. The loader accepts each supported descriptor without treating every old scaffold as the latest layout. Legacy schema-one and config-less scaffolds remain on the layout-one path rather than being implicitly upgraded to fact metadata."
+  },
+  {
+    "category": "glossary",
+    "name": "continuation",
+    "title": "Continuation",
+    "summary": "Clone-local session state, not shared durable project truth.",
+    "sources": [
+      "pkg/ctx/init.go",
+      "pkg/ctx/template/v3/local/CONTINUE.md"
+    ],
+    "body": "The continuation is local/CONTINUE.md in configured modern scaffolds. It holds the current objective, repository position, completed and in-flight work, checks, next action, blockers, and shared-context follow-ups. It is ignored in both team and local modes. A config-less legacy scaffold instead keeps its original root CONTINUE.md. A newly hydrated continuation is a template for this clone, not a copy of a previous developer's active session. Durable discoveries belong in the appropriate fact document or canonical project record, not solely in ignored continuation. Check the actual branch and worktree before trusting a saved checkpoint."
+  },
+  {
+    "category": "behavior",
+    "name": "team-hydration",
+    "title": "Team scaffold hydration",
+    "summary": "Creation and refusal rules for init on a fresh team clone.",
+    "sources": [
+      "pkg/ctx/init.go"
+    ],
+    "body": "When the destination exists, InitWithOptions delegates to hydrateTeamLocalState instead of republishing a scaffold. Hydration is permitted only for a configured team scaffold and a team-mode request. It requires the selected layout's durable outputs to exist as safe regular files, visible shared paths, and effective privacy for local continuation. Missing local/CONTINUE.md is the intended fresh-clone case. Init may create the missing local directory and continuation, but it does not rewrite durable facts or config. A present continuation, unexpected root CONTINUE.md, incomplete scaffold, unsafe local path, or mode conflict causes refusal. Explicit add-on selection must exactly match the saved selection; implicit new defaults do not alter saved add-ons. Install a missing add-on with ctx add, not by forcing init. The staged continuation and local-directory identity are checked before publication. Hydration is not a license to delete the existing folder, remove ignore rules, or edit layoutVersion to bypass refusal."
+  },
+  {
+    "category": "behavior",
+    "name": "addons",
+    "title": "Add-on installation",
+    "summary": "How missing concerns are added without changing the saved layout.",
+    "sources": [
+      "pkg/ctx/add.go",
+      "pkg/ctx/catalog.go"
+    ],
+    "body": "ctx add supports configured layout-v2 and layout-v3 scaffolds. It normalizes requested identifiers, refuses already installed add-ons and existing outputs, and requires a compatible template revision. An older managed revision needs ctx update first; a newer unsupported revision needs a compatible CLI rather than downgrade. Installation uses the persisted layout's catalog. Contracts is context/contracts.md on layout v2 and context/contracts/index.md on layout v3. The operation adds the selected documents, refreshes the managed INDEX routing block, and updates config in a rollback-capable transaction. Project-owned INDEX text remains outside the replaced managed block. New fact templates are draft. Add does not inspect the application to populate them and does not convert the existing layout. The global --list display describes current default paths; it is not a request to relocate outputs in an older scaffold."
+  },
+  {
+    "category": "behavior",
+    "name": "sharing",
+    "title": "Sharing mode",
+    "summary": "Durable team files versus whole-folder Git exclusion.",
+    "sources": [
+      "pkg/ctx/init.go",
+      "pkg/ctx/config.go",
+      "pkg/ctx/doctor.go"
+    ],
+    "body": "New initialization defaults to team mode. The scaffold's .gitignore hides local continuation and short-lived transaction names while durable config, routing, and facts remain available to Git. Local mode additionally excludes the entire selected folder through the repository-local common exclude file. Both modes still keep local state local. Init checks effective Git visibility, not merely whether an ignore file contains a desired line. A team scaffold cannot be made valid by silently stripping an owner's conflicting ignore rule. Existing mode and layout are not converted by hydration. Ignore behavior is not encryption or access control. ctx does not stage or commit documents; the human decides whether durable changes should be shared."
+  },
+  {
+    "category": "behavior",
+    "name": "compatibility",
+    "title": "Existing scaffold compatibility",
+    "summary": "What update preserves and why new defaults do not migrate old context.",
+    "sources": [
+      "pkg/ctx/update.go",
+      "pkg/ctx/catalog.go",
+      "pkg/ctx/config.go",
+      "pkg/ctx/init.go"
+    ],
+    "body": "Existing layout-v2 scaffolds retain flat fact parents, selected add-ons, and their own managed template revision. Update loads the saved layout and refreshes only its managed documents. It does not move context/architecture.md to context/architecture/index.md, install new default add-ons, rewrite authored facts, or certify evidence. Hydration likewise loads saved layout/add-ons rather than adopting implicit defaults. New initialization uses layout v3, but that default is not a conversion command. No supported layout-conversion command is included. Keep established paths, and add missing concerns through ctx add after any needed managed-template update. Schema-one and config-less legacy scaffolds preserve their original templates and continuation behavior. Status cannot certify legacy readiness because that layout predates the fact metadata contract. Do not hand-edit a descriptor to simulate a migration."
+  },
+  {
+    "category": "architecture",
+    "name": "catalog",
+    "title": "Layout-aware catalog",
+    "summary": "How core and add-on paths are selected.",
+    "sources": [
+      "pkg/ctx/catalog.go",
+      "pkg/ctx/embed.go"
+    ],
+    "body": "The catalog separates a layout descriptor from document specifications. A specification identifies output path, embedded template path, fact/local/managed roles, and managed marker identity when relevant. Layouts one, two, and three select separate core assets. The flat add-on catalog remains available to layout two; layout three maps fact add-ons to category/index.md assets. Operating policy stays OPERATING.md and review stays workflows/review.md because these are not project-fact categories. RequiredOutputs combines the selected documents with the layout's required config and ignore mechanics. TemplateFS preserves the original legacy API. TemplateFSForLayout selects an explicit core version. AddonTemplateFS preserves its flat layout-two API, while AddonTemplateFSForLayout selects the requested version."
+  },
+  {
+    "category": "architecture",
+    "name": "managed-updates",
+    "title": "Managed updates",
+    "summary": "Named blocks, project-owned content, and version-specific templates.",
+    "sources": [
+      "pkg/ctx/update.go"
+    ],
+    "body": "Update reads the persisted state and selects ManagedDocuments for that layout and add-on set. Configured modern layouts use named managed blocks. The operation parses and validates existing/template block identity before staging outputs; malformed or missing managed markers fail closed. Named managed content can be refreshed without replacing project-owned prose outside those blocks. Fact documents are not managed update outputs and are not rewritten by this command. The next template revision comes from the same saved layout, not from the latest layout's revision. A newer installed revision is refused rather than downgraded. The output transaction preserves modes and uses staged replacements and rollback handling. These implementation steps should not be broadened into a universal crash-durability guarantee."
+  },
+  {
+    "category": "architecture",
+    "name": "readiness",
+    "title": "Content readiness discovery",
+    "summary": "Required facts, nested documents, metadata, and source freshness.",
+    "sources": [
+      "pkg/ctx/status.go",
+      "pkg/ctx/status_metadata.go"
+    ],
+    "body": "Status checks required catalog facts and recursively discovers Markdown below context/. It checks both category indexes and authored topic files; safe discovery does not follow symlinks. A ready index does not cause a child to be skipped or inherit readiness. Overall readiness is false if any reported document is not ready. Each fact requires one metadata comment with draft, verified, or not-applicable status. Verified sources are checked against the immutable commit and current worktree/index state. Changed or untracked listed evidence prevents a clean verification result. Word-count guidance produces non-failing warnings, not automatic truth judgments. The overview, category indexes, topic documents, router, and continuation have distinct guidance targets. Status does not parse the meaning of every sentence or determine that all necessary evidence was cited."
+  },
+  {
+    "category": "architecture",
+    "name": "publication",
+    "title": "Initial scaffold publication",
+    "summary": "Why init stages a fresh destination before publication.",
+    "sources": [
+      "pkg/ctx/init.go"
+    ],
+    "body": "Fresh initialization first validates the target, normalized options, tracked-index conflicts, and effective Git boundaries. It stages the selected layout's documents in a private initialization namespace, writes config and ignore mechanics, and snapshots the staged tree. Publication uses a final rename so a failed creation should not expose a partly populated destination. Local-mode exclusion changes have rollback handling. Checks around publication protect against directory replacement and changed visibility. These are implementation and safety boundaries, not proof that external processes cannot race or that every filesystem provides power-loss durability. Existing destinations are routed to constrained hydration, not overwritten as new scaffolds."
+  },
+  {
+    "category": "caveats",
+    "name": "evidence",
+    "title": "Mechanical health is not factual truth",
+    "summary": "Doctor, status, citation bookkeeping, and source-level review.",
+    "sources": [
+      "pkg/ctx/doctor.go",
+      "pkg/ctx/status.go",
+      "skills/ctx/references/evidence-review.md"
+    ],
+    "body": "Doctor validates scaffold configuration, expected files, marker grammar, and effective Git visibility/privacy. Status validates fact metadata, listed-source freshness, and size guidance. Neither independently verifies prose accuracy, exhaustive test coverage, or actual owner approval. An optional evidence citation helper checks explicitly labelled paths and metadata coverage, not arbitrary prose citations, semantic support, or completeness. A bounded review must compare material claims with actual implementation, direct test assertions, or documented owner decisions. Passing tests cannot extend assertions to cases they never check. Verification of a category index certifies only that document's own claims, not every linked topic. Recommended maintainer review focuses on consequential new or materially changed guarantees; it is not a blanket approval requirement installed by the CLI."
+  },
+  {
+    "category": "caveats",
+    "name": "private-state",
+    "title": "Git privacy is not secret storage",
+    "summary": "Why ignored continuation should not hold secrets or sole copies of shared facts.",
+    "sources": [
+      "pkg/ctx/template/v3/README.md",
+      "pkg/ctx/template/v3/local/CONTINUE.md"
+    ],
+    "body": "Ignored context is private from ordinary Git tracking, not encrypted or access-controlled. Do not treat local continuation or a local-mode context folder as secret storage. Team mode intentionally makes durable facts shareable, so facts must be suitable for code review and version control. Keep durable discoveries out of purely local state when other developers need them. A copied checkpoint can also be stale for another clone; compare actual repository state before relying on it. Effective ignore checks are separate from deciding whether a document's content is appropriate to share."
+  }
+]

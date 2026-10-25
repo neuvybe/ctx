@@ -6,6 +6,15 @@ an agent how to populate, consume, and maintain ctx-managed context. Its
 [CLI reference](../skills/ctx/references/cli.md) is bundled with it so the installed
 skill does not depend on this repository's documentation being present.
 
+The skill follows the saved layout: new v3 facts use category `index.md` files,
+while existing v2 facts keep flat parents. It teaches selective topic loading,
+short category summaries, and independent evidence metadata without requiring
+one file per term. See [folder-first layout v3](layout-v3.md).
+
+The [retrieval comparison](../evals/ctx-skill/retrieval-comparison-results.md)
+records mixed and interrupted outcomes rather than a claim that folder-first
+is proven faster or more accurate.
+
 The skill is agent-facing workflow guidance. The
 [worked example](examples/ctx/README.md) is a human-readable reference result;
 neither makes project facts appear automatically.

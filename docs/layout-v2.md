@@ -1,5 +1,9 @@
 # Layout v2 and add-ons
 
+Compatibility reference: existing scaffolds keep this flat layout. New
+initialization uses [folder-first layout v3](layout-v3.md). Update and add do
+not convert layouts; all v2 paths and templates below remain supported.
+
 Layout v2 minimizes always-loaded context, gives each concern one owner, and
 makes fact readiness machine-readable without pretending metadata proves truth.
 

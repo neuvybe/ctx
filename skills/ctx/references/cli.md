@@ -1,9 +1,9 @@
 # ctx CLI contract
 
 Use the installed CLI's help and persisted scaffold configuration if they
-disagree with this reference. These examples describe layout v2 in ctx 0.4.0
-and later compatible releases; CLI release, config schema, layout version,
-and managed template revision are separate values.
+disagree with this reference. New initialization uses folder-first layout v3; existing layout v2 remains
+flat. CLI release, config schema, layout version, and managed template revision
+are separate values. Layouts v2 and v3 both use config schema 2.
 
 ## Select the target explicitly
 
@@ -67,7 +67,7 @@ add; a newer one needs a compatible CLI, not a forced downgrade.
 ctx update /path/to/repo --folder .agent
 ```
 
-Update uses the persisted layout/add-ons. Layout-v2 README and INDEX have strict
+Update uses the persisted layout/add-ons. Layout-v2/v3 README and INDEX have strict
 named managed blocks; do not remove/rename those markers. Put project routes
 outside the managed routing block. Updates preserve project-owned sections,
 facts, and authored children and advance managed template metadata.
@@ -93,6 +93,14 @@ Status checks required facts and every nested Markdown document under
 sources cause non-zero readiness. Word-count guidance alone does not.
 Inspect reported paths, reconcile within scope, and state unresolved gaps.
 Neither checker reviews the truth or sufficiency of the prose.
+
+## Existing flat scaffolds
+
+Layout v2 keeps `context/<category>.md` and template revision `2.0.1`.
+Init hydration, add, update, doctor, and status use the saved layout. New v3
+facts use `context/<category>/index.md` with sibling topic files. There is no
+conversion command: do not move old facts or hand-edit layoutVersion. The
+readiness of an index says nothing about its linked topics.
 
 ## Legacy scaffolds
 

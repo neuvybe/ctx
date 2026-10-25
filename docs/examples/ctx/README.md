@@ -1,5 +1,10 @@
 # Worked example: ctx's own context
 
+This is an intentionally preserved **layout-v2** example. New initialization
+uses [folder-first layout v3](../../layout-v3.md); do not expect the current CLI
+to generate these historical flat paths. The commands and transcripts below
+describe the pinned release. Existing v2 scaffolds remain compatible.
+
 This example shows a populated default scaffold and how it evolves during
 development. The project is ctx itself: its domain is context lifecycle and
 sharing rules, not checkout or subscriptions.

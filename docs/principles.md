@@ -1,7 +1,7 @@
 # Principles
 
 `ctx` is useful when it reduces re-derivation without replacing source truth or
-the repository owner's authority. Layout v2 follows these principles.
+the repository owner's authority. The current layout follows these principles.
 
 ## 1. Share durable evidence; keep current state local
 
@@ -26,7 +26,7 @@ default. Both remain outside the fixed core and can be omitted deliberately.
 Not every project has a formal extension API, compatibility-sensitive
 representations, a shared operating policy, or a review workflow.
 
-Layout v2 keeps those concerns in the add-on catalog. Apart from the
+The layout keeps those concerns in the add-on catalog. Apart from the
 default-selected behavior and glossary, add-ons are opt-in. Installed documents
 should earn their routing and maintenance cost rather than exist to complete an
 empty taxonomy.
@@ -41,16 +41,19 @@ fact add-ons own their narrower contracts, extension points, or terminology.
 Continuation owns local state only.
 
 Agents should read parent summaries before specialized children and load only
-the branch relevant to the task. When detail outgrows a scannable document,
-split a coherent child and link it instead of expanding the mandatory load path.
-For behavior, keep the shared model in `context/behavior.md` and put focused
+the branch relevant to the task. Use category folders from initialization. During first population, put
+independently useful explanations in focused topic files and link them from the
+category index; keep short related facts together. Do not wait for a size warning
+or force every term into a separate file. A concise index supplies orientation,
+not a copy of its children.
+For behavior, keep the shared model in `context/behavior/index.md` and put focused
 workflow or domain detail under `context/behavior/`. Label current behavior and
 intended changes separately so requirements cannot silently become claims about
 the implementation.
 
 ## 4. Make freshness and evidence visible
 
-A polished document can still be wrong. Every v2 project-fact document therefore
+A polished document can still be wrong. Every v2/v3 project-fact document therefore
 states whether it is `draft`, `verified`, or `not-applicable`, the commit/date at
 which it was checked, and the source paths that support it.
 
@@ -84,6 +87,7 @@ factual truth; an agent must inspect source and tests.
 
 ## 7. Preserve compatibility deliberately
 
+Existing v2 scaffolds keep flat fact paths and their own add-on/update catalog.
 Existing v1 and config-less legacy scaffolds keep their original layout,
 continuation path, managed-marker grammar, and frozen update source. New design
 improvements do not justify silently moving private state, exposing files, or

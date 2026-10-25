@@ -13,7 +13,7 @@ isolating clone/session state:
 Use `--mode local` when the entire context folder should remain private through
 the repository's common `.git/info/exclude` file.
 
-## Layout v2
+## Folder-first layout v3
 
 A default new initialization creates the fixed core plus behavior and glossary:
 
@@ -24,11 +24,16 @@ A default new initialization creates the fixed core plus behavior and glossary:
 ├── README.md
 ├── INDEX.md
 ├── context/
-│   ├── overview.md
-│   ├── architecture.md
-│   ├── caveats.md
-│   ├── behavior.md      # default-selected add-on
-│   └── glossary.md      # default-selected add-on
+│   ├── overview/
+│   │   └── index.md
+│   ├── architecture/
+│   │   └── index.md
+│   ├── caveats/
+│   │   └── index.md
+│   ├── behavior/         # default-selected add-on
+│   │   └── index.md
+│   └── glossary/         # default-selected add-on
+│       └── index.md
 └── local/
     └── CONTINUE.md
 ```
@@ -38,8 +43,10 @@ business/domain rules, decisions, state transitions, and expected outcomes;
 architecture owns components, implementation flows, and technical invariants;
 caveats owns confirmed limitations and operational gotchas; continuation owns
 current local state only.
-Large projects can add focused nested documents under `context/` and route to
-them from INDEX's project-owned section without expanding the always-read core.
+Each category starts with a concise summary and routes. During population, give
+independently useful explanations sibling topic files from the start; keep short,
+related facts together. Folders provide room to grow without generating empty
+topic stubs or forcing one file per term.
 
 The core stays fixed and lean. Behavior and glossary remain add-ons, but new
 scaffolds select them by default. The index routes logic-related tasks to
@@ -49,14 +56,14 @@ for a core-only scaffold. The other add-ons remain opt-in.
 
 | Add-on | Installed file | Default | Use when |
 |---|---|---:|---|
-| `behavior` | `context/behavior.md` | Yes | Core business/domain rules and expected outcomes need explanation |
-| `glossary` | `context/glossary.md` | Yes | Project-specific terminology needs disambiguation |
+| `behavior` | `context/behavior/index.md` | Yes | Core business/domain rules and expected outcomes need explanation |
+| `glossary` | `context/glossary/index.md` | Yes | Project-specific terminology needs disambiguation |
 | `operating` | `OPERATING.md` | No | The owner wants a shared project-specific working agreement |
-| `contracts` | `context/contracts.md` | No | Data, API, storage, or message compatibility is a real boundary |
-| `extending` | `context/extending.md` | No | The project has supported extension points |
+| `contracts` | `context/contracts/index.md` | No | Data, API, storage, or message compatibility is a real boundary |
+| `extending` | `context/extending/index.md` | No | The project has supported extension points |
 | `review` | `workflows/review.md` | No | The project wants a shared, tool-neutral review profile |
 
-See [Layout v2 and add-ons](docs/layout-v2.md) for metadata, routing, managed
+See [Folder-first layout v3](docs/layout-v3.md) for metadata, routing, managed
 markers, and size guidance.
 
 ## Install
@@ -75,7 +82,7 @@ go install github.com/neuvybe/ctx/cmd/ctx@latest
 ## Initialize and extend
 
 ```bash
-# Default: team mode with the v2 core plus behavior and glossary
+# Default: team mode with the v3 core plus behavior and glossary
 ctx init /path/to/repo
 
 # Core only: omit both default-selected add-ons
@@ -107,7 +114,7 @@ On a fresh clone containing committed team context, run `ctx init` again and
 repeat `--folder` when customized. It hydrates the missing ignored continuation
 without rewriting durable files.
 
-ctx generates only the behavior parent, `context/behavior.md`. Keep it as a
+ctx generates the behavior category index, `context/behavior/index.md`. Keep it as a
 short model. During context filling, the developer or agent can create
 `context/behavior/<topic>.md` for detailed workflow or domain rules and link
 each child from the parent. These project-specific topics are not generated
@@ -164,7 +171,7 @@ ignored. See the [fill-context workflow](docs/fill-context-workflow.md).
 
 For a complete populated scaffold and a walkthrough from initialization through
 source changes and fresh-clone handoff, explore the
-[worked example using ctx itself](docs/examples/ctx/README.md). It separates
+[worked example using ctx itself](docs/examples/ctx/README.md). That example is a pinned layout-v2 snapshot, not the new default. It separates
 generated structure, authored facts, and local session state.
 
 ## Commands
@@ -178,10 +185,15 @@ generated structure, authored facts, and local session state.
 - `ctx upgrade`
 - `ctx --version`
 
-## V1 compatibility
+## Existing scaffold compatibility
+
+Existing layout-v2 scaffolds keep their flat `context/<category>.md` paths,
+selected add-ons, and template revision `2.0.1`. Update, add, status, doctor, and
+team hydration continue to use the saved layout; no implicit file moves occur.
+There is no conversion command yet. See [layout compatibility](docs/layout-v3.md#existing-scaffolds).
 
 Existing schema-v1 and config-less legacy scaffolds are not silently converted
-to layout v2. Their file names, unnamed ordinal managed blocks, update source,
+to a newer layout. Their file names, unnamed ordinal managed blocks, update source,
 and continuation location remain on the v1 compatibility path. Config-less
 legacy scaffolds stay whole-folder local with root `CONTINUE.md`.
 

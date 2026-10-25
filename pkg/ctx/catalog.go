@@ -8,8 +8,9 @@ import (
 
 const (
 	LegacyLayoutVersion     = 1
-	CurrentLayoutVersion    = 2
-	CurrentTemplateRevision = "2.0.1"
+	FlatLayoutVersion       = 2
+	CurrentLayoutVersion    = 3
+	CurrentTemplateRevision = "3.0.0"
 )
 
 type MarkerFormat string
@@ -38,7 +39,7 @@ type DocumentSpec struct {
 	ManagedMarkerID string
 }
 
-// Addon describes one optional v2 document set.
+// Addon describes one optional document set in the current layout.
 type Addon struct {
 	ID          string
 	Path        string
@@ -50,7 +51,8 @@ type Addon struct {
 
 var layouts = map[int]LayoutSpec{
 	1: {Version: 1, TemplateRevision: "v1-frozen", MarkerFormat: MarkerFormatUnnamedV1},
-	2: {Version: 2, TemplateRevision: CurrentTemplateRevision, MarkerFormat: MarkerFormatNamedV2},
+	2: {Version: 2, TemplateRevision: "2.0.1", MarkerFormat: MarkerFormatNamedV2},
+	3: {Version: 3, TemplateRevision: CurrentTemplateRevision, MarkerFormat: MarkerFormatNamedV2},
 }
 
 var v1Documents = []DocumentSpec{
@@ -90,6 +92,27 @@ var addonCatalog = []addonSpec{
 	{Addon: Addon{ID: "review", Path: "workflows/review.md", Description: "shared review workflow", RouteNeed: "The project's review procedure", RoutePath: "workflows/review.md"}, Document: DocumentSpec{Path: "workflows/review.md", TemplatePath: "addons/review/workflows/review.md", Managed: true, ManagedMarkerID: "review-workflow"}},
 }
 
+// addonCatalogForLayout preserves the flat catalog for existing scaffolds.
+// Only facts move: policy and workflow mechanics retain their paths.
+func addonCatalogForLayout(layoutVersion int) []addonSpec {
+	result := append([]addonSpec(nil), addonCatalog...)
+	if layoutVersion == CurrentLayoutVersion {
+		for i := range result {
+			if result[i].Document.ProjectFact {
+				path := folderFirstFactPath(result[i].Path)
+				result[i].Path, result[i].RoutePath = path, path
+				result[i].Document.Path = path
+				result[i].Document.TemplatePath = "addons-v3/" + result[i].ID + "/" + path
+			}
+		}
+	}
+	return result
+}
+
+func folderFirstFactPath(path string) string {
+	return strings.TrimSuffix(path, ".md") + "/index.md"
+}
+
 func LayoutForVersion(version int) (LayoutSpec, bool) {
 	layout, ok := layouts[version]
 	return layout, ok
@@ -97,13 +120,13 @@ func LayoutForVersion(version int) (LayoutSpec, bool) {
 
 func ListAddons() []Addon {
 	addons := make([]Addon, 0, len(addonCatalog))
-	for _, spec := range addonCatalog {
+	for _, spec := range addonCatalogForLayout(CurrentLayoutVersion) {
 		addons = append(addons, spec.Addon)
 	}
 	return addons
 }
 
-// DefaultAddonIDs returns the add-ons selected for a new layout-v2 scaffold.
+// DefaultAddonIDs returns the add-ons selected for a new scaffold.
 // The returned slice is independent and may be modified by the caller.
 func DefaultAddonIDs() []string {
 	var defaults []string
@@ -116,7 +139,11 @@ func DefaultAddonIDs() []string {
 }
 
 func LookupAddon(id string) (Addon, bool) {
-	for _, spec := range addonCatalog {
+	return lookupAddonForLayout(CurrentLayoutVersion, id)
+}
+
+func lookupAddonForLayout(layoutVersion int, id string) (Addon, bool) {
+	for _, spec := range addonCatalogForLayout(layoutVersion) {
 		if spec.ID == id {
 			return spec.Addon, true
 		}
@@ -131,13 +158,21 @@ func DocumentsForLayout(layoutVersion int, addons []string) ([]DocumentSpec, err
 			return nil, fmt.Errorf("layout v1 does not support add-ons")
 		}
 		return append([]DocumentSpec(nil), v1Documents...), nil
-	case 2:
+	case FlatLayoutVersion, CurrentLayoutVersion:
 		selected, err := normalizeAddonSelection(addons)
 		if err != nil {
 			return nil, err
 		}
 		documents := append([]DocumentSpec(nil), v2CoreDocuments...)
-		for _, spec := range addonCatalog {
+		if layoutVersion == CurrentLayoutVersion {
+			for i := range documents {
+				if documents[i].ProjectFact {
+					documents[i].Path = folderFirstFactPath(documents[i].Path)
+				}
+				documents[i].TemplatePath = "v3/" + documents[i].Path
+			}
+		}
+		for _, spec := range addonCatalogForLayout(layoutVersion) {
 			if selected[spec.ID] {
 				documents = append(documents, spec.Document)
 			}
@@ -240,7 +275,7 @@ func normalizeAddonSelection(addons []string) (map[string]bool, error) {
 	return selected, nil
 }
 
-func addonRoutesMarkdown(addons []string) (string, error) {
+func addonRoutesMarkdown(layoutVersion int, addons []string) (string, error) {
 	names, err := normalizeAddonNames(addons)
 	if err != nil {
 		return "", err
@@ -251,7 +286,7 @@ func addonRoutesMarkdown(addons []string) (string, error) {
 	var out strings.Builder
 	out.WriteString("| Need | Read |\n|---|---|\n")
 	for _, id := range names {
-		addon, _ := LookupAddon(id)
+		addon, _ := lookupAddonForLayout(layoutVersion, id)
 		fmt.Fprintf(&out, "| %s | `%s` |\n", addon.RouteNeed, addon.RoutePath)
 	}
 	return strings.TrimSuffix(out.String(), "\n"), nil

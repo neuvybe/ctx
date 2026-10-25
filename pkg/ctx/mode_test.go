@@ -158,7 +158,7 @@ func TestInitWithOptionsTeamRejectsIgnoredSharedFile(t *testing.T) {
 	}
 
 	err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
-	if err == nil || !strings.Contains(err.Error(), ".ctx/context/overview.md") {
+	if err == nil || !strings.Contains(err.Error(), ".ctx/context/overview/index.md") {
 		t.Fatalf("team init error = %v, want ignored shared-file error", err)
 	}
 	if _, statErr := os.Lstat(filepath.Join(repo, ".ctx")); !errors.Is(statErr, os.ErrNotExist) {

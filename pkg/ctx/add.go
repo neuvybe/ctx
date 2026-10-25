@@ -16,7 +16,7 @@ type AddResult struct {
 }
 
 // Add installs one or more optional document sets into an existing configured
-// layout-v2 scaffold. Add-on IDs may be repeated or comma-separated. The
+// layout-v2/v3 scaffold. Add-on IDs may be repeated or comma-separated. The
 // operation refuses every existing output and publishes new documents, the
 // INDEX routing block, and config.json as one rollback-capable transaction.
 func Add(repo, folder string, addons []string) (AddResult, error) {
@@ -56,24 +56,25 @@ func Add(repo, folder string, addons []string) (AddResult, error) {
 		return AddResult{}, fmt.Errorf("preflight %s: %w", configFileName, err)
 	}
 	if !configOutput.exists {
-		return AddResult{}, fmt.Errorf("ctx add requires a configured layout-v2 scaffold; legacy scaffolds are not migrated automatically")
+		return AddResult{}, fmt.Errorf("ctx add requires a configured layout-v2/v3 scaffold; legacy scaffolds are not migrated automatically")
 	}
 	cfg, err := parseConfig(configOutput.data)
 	if err != nil {
 		return AddResult{}, fmt.Errorf("parse %s: %w", configFileName, err)
 	}
-	if cfg.SchemaVersion != currentSchemaVersion || cfg.LayoutVersion != CurrentLayoutVersion {
-		return AddResult{}, fmt.Errorf("ctx add requires schema %d layout v%d; found schema %d layout v%d (no automatic migration)", currentSchemaVersion, CurrentLayoutVersion, cfg.SchemaVersion, cfg.LayoutVersion)
+	if cfg.SchemaVersion != currentSchemaVersion || (cfg.LayoutVersion != FlatLayoutVersion && cfg.LayoutVersion != CurrentLayoutVersion) {
+		return AddResult{}, fmt.Errorf("ctx add requires schema %d layout v2/v3; found schema %d layout v%d (no automatic migration)", currentSchemaVersion, cfg.SchemaVersion, cfg.LayoutVersion)
 	}
-	revisionComparison, err := compareTemplateRevisions(cfg.TemplateRevision, CurrentTemplateRevision)
+	layout, _ := LayoutForVersion(cfg.LayoutVersion)
+	revisionComparison, err := compareTemplateRevisions(cfg.TemplateRevision, layout.TemplateRevision)
 	if err != nil {
 		return AddResult{}, fmt.Errorf("unsupported installed template revision %q: %w", cfg.TemplateRevision, err)
 	}
 	if revisionComparison < 0 {
-		return AddResult{}, fmt.Errorf("template revision %q is older than %q; run `ctx update --folder %q` before adding documents", cfg.TemplateRevision, CurrentTemplateRevision, folder)
+		return AddResult{}, fmt.Errorf("template revision %q is older than %q; run `ctx update --folder %q` before adding documents", cfg.TemplateRevision, layout.TemplateRevision, folder)
 	}
 	if revisionComparison > 0 {
-		return AddResult{}, fmt.Errorf("template revision %q is newer than this CLI supports (%q); upgrade ctx before adding documents", cfg.TemplateRevision, CurrentTemplateRevision)
+		return AddResult{}, fmt.Errorf("template revision %q is newer than this CLI supports (%q); upgrade ctx before adding documents", cfg.TemplateRevision, layout.TemplateRevision)
 	}
 	if err := validateAddScaffoldBaseline(dest, cfg); err != nil {
 		return AddResult{}, err
@@ -93,7 +94,7 @@ func Add(repo, folder string, addons []string) (AddResult, error) {
 		return AddResult{}, err
 	}
 
-	documents, err := addonDocuments(requested)
+	documents, err := addonDocuments(cfg.LayoutVersion, requested)
 	if err != nil {
 		return AddResult{}, err
 	}
@@ -103,7 +104,7 @@ func Add(repo, folder string, addons []string) (AddResult, error) {
 	}
 
 	state := scaffoldState{Config: cfg}
-	routes, err := addonRoutesMarkdown(combined)
+	routes, err := addonRoutesMarkdown(cfg.LayoutVersion, combined)
 	if err != nil {
 		return AddResult{}, err
 	}
@@ -158,7 +159,7 @@ func Add(repo, folder string, addons []string) (AddResult, error) {
 		files = append(files, document.Path)
 	}
 
-	indexDocument, err := catalogDocument(CurrentLayoutVersion, combined, "INDEX.md")
+	indexDocument, err := catalogDocument(cfg.LayoutVersion, combined, "INDEX.md")
 	if err != nil {
 		return AddResult{}, err
 	}
@@ -213,7 +214,7 @@ func Add(repo, folder string, addons []string) (AddResult, error) {
 		originalInfo: configOutput.info,
 	})
 
-	visibilityPaths, err := addonVisibilityPaths(dest, combined)
+	visibilityPaths, err := addonVisibilityPaths(dest, cfg.LayoutVersion, combined)
 	if err != nil {
 		return AddResult{}, err
 	}
@@ -254,12 +255,12 @@ func Add(repo, folder string, addons []string) (AddResult, error) {
 	return AddResult{Addons: append([]string(nil), requested...), Files: files}, nil
 }
 
-func addonVisibilityPaths(dest string, addons []string) ([]string, error) {
+func addonVisibilityPaths(dest string, layoutVersion int, addons []string) ([]string, error) {
 	existing, err := teamSharedPaths(dest)
 	if err != nil {
 		return nil, err
 	}
-	catalog, err := teamVisibleOutputs(CurrentLayoutVersion, addons)
+	catalog, err := teamVisibleOutputs(layoutVersion, addons)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +294,7 @@ func validateAddScaffoldBaseline(dest string, cfg Config) error {
 	if _, err := inspectScaffoldOutput(dest, ".gitignore", false); err != nil {
 		return fmt.Errorf("configured scaffold output .gitignore is missing or invalid; run ctx doctor before adding documents: %w", err)
 	}
-	orphans, err := undeclaredAddonOutputs(dest, cfg.Addons)
+	orphans, err := undeclaredAddonOutputs(dest, cfg.LayoutVersion, cfg.Addons)
 	if err != nil {
 		return fmt.Errorf("inspect existing add-on catalog state: %w", err)
 	}
@@ -303,8 +304,8 @@ func validateAddScaffoldBaseline(dest string, cfg Config) error {
 	return nil
 }
 
-func addonDocuments(addons []string) ([]DocumentSpec, error) {
-	core, err := DocumentsForLayout(CurrentLayoutVersion, nil)
+func addonDocuments(layoutVersion int, addons []string) ([]DocumentSpec, error) {
+	core, err := DocumentsForLayout(layoutVersion, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +313,7 @@ func addonDocuments(addons []string) ([]DocumentSpec, error) {
 	for _, document := range core {
 		corePaths[document.Path] = true
 	}
-	all, err := DocumentsForLayout(CurrentLayoutVersion, addons)
+	all, err := DocumentsForLayout(layoutVersion, addons)
 	if err != nil {
 		return nil, err
 	}

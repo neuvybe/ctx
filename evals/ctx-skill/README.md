@@ -1,5 +1,11 @@
 # ctx skill forward-testing protocol
 
+The [flat-versus-folder retrieval protocol](retrieval-comparison.md) and
+[recorded results](retrieval-comparison-results.md) cover the new layout.
+Three of eight sessions returned final answers; the results do not establish
+a retrieval-speed or accuracy advantage. Provider failures and the interrupted
+trial are retained alongside a source-checking miss.
+
 The [skill](../../skills/ctx/SKILL.md) should improve an agent's decisions about
 repository context, not simply produce familiar headings. This protocol uses
 the [booking demo](../../testdata/booking-demo/README.md) rather than ctx's own

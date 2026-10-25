@@ -52,7 +52,7 @@ func (s ContentStatus) Ready() bool {
 }
 
 // Status evaluates project-fact documents without modifying the repository.
-// Layout-v2 catalog facts and every Markdown file nested below context/ are
+// Layout-v2/v3 catalog facts and every Markdown file nested below context/ are
 // checked. Layout v1 remains supported by init/update/doctor, but it does not
 // carry the metadata required to certify content readiness.
 func Status(repo, folder string) (ContentStatus, error) {
@@ -74,11 +74,11 @@ func Status(repo, folder string) (ContentStatus, error) {
 	}
 	layoutVersion := state.layoutVersion()
 	report := ContentStatus{LayoutVersion: layoutVersion}
-	if layoutVersion != CurrentLayoutVersion {
+	if layoutVersion == LegacyLayoutVersion {
 		report.Checks = []ContentCheck{{
 			Path:   "layout",
 			State:  ContentNotReady,
-			Detail: fmt.Sprintf("layout v%d has no content-readiness metadata; status requires layout v%d", layoutVersion, CurrentLayoutVersion),
+			Detail: fmt.Sprintf("layout v%d has no content-readiness metadata; status requires layout v2 or v3", layoutVersion),
 		}}
 		return report, nil
 	}

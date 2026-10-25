@@ -31,11 +31,13 @@ test("prepares a review fixture with passing application and metadata checks wit
   assert.equal(config.mode, "team");
   assert.deepEqual(config.addons, ["behavior", "glossary"]);
   const facts = (await readdir(join(destination, ".agent/context"))).sort();
-  assert.deepEqual(facts, ["architecture.md", "behavior.md", "caveats.md", "glossary.md", "overview.md"]);
+  assert.equal(config.layoutVersion, 3);
+  assert.deepEqual(facts, ["architecture", "behavior", "caveats", "glossary", "overview"]);
   for (const file of facts) {
-    const content = await readFile(join(destination, ".agent/context", file), "utf8");
-    const expected = (await readFile(join(repository, "evals/ctx-skill/fixtures/evidence-review", file), "utf8"))
-      .replaceAll("{{SOURCE_COMMIT}}", prepared.sourceCommit).replaceAll("{{VERIFIED_DATE}}", prepared.verifiedOn);
+    const content = await readFile(join(destination, ".agent/context", file, "index.md"), "utf8");
+    const expected = (await readFile(join(repository, "evals/ctx-skill/fixtures/evidence-review", file + ".md"), "utf8"))
+      .replaceAll("{{SOURCE_COMMIT}}", prepared.sourceCommit).replaceAll("{{VERIFIED_DATE}}", prepared.verifiedOn)
+      .replaceAll(/\]\((overview|behavior|architecture|caveats|glossary)\.md\)/g, "](../$1/index.md)");
     assert.equal(content, expected);
     const markers = [...content.matchAll(/<!-- ctx:doc (.*?) -->/g)];
     assert.equal(markers.length, 1);
@@ -47,17 +49,17 @@ test("prepares a review fixture with passing application and metadata checks wit
   }
   // Omitted supporting evidence is deliberate: mechanical readiness still
   // passes because status cannot decide whether prose has sufficient sources.
-  const overview = await readFile(join(destination, ".agent/context/overview.md"), "utf8");
+  const overview = await readFile(join(destination, ".agent/context/overview/index.md"), "utf8");
   assert.equal(JSON.parse(overview.match(/<!-- ctx:doc (.*?) -->/)[1]).sources.includes("go.mod"), false);
   assert.equal(git(destination, "check-ignore", ".agent/local/CONTINUE.md"), ".agent/local/CONTINUE.md");
   for (const command of ["doctor", "status"]) execFileSync(cli, [command, destination, "--folder", ".agent"]);
   execFileSync("go", ["test", "./..."], { cwd: destination });
 
-  const contextBefore = await readFile(join(destination, ".agent/context/behavior.md"));
+  const contextBefore = await readFile(join(destination, ".agent/context/behavior/index.md"));
   const refused = spawnSync(process.execPath, args, { encoding: "utf8" });
   assert.notEqual(refused.status, 0);
   assert.match(refused.stderr, /Refusing existing destination/);
-  assert.deepEqual(await readFile(join(destination, ".agent/context/behavior.md")), contextBefore);
+  assert.deepEqual(await readFile(join(destination, ".agent/context/behavior/index.md")), contextBefore);
   assert.equal(git(destination, "rev-parse", "HEAD"), prepared.sourceCommit);
   assert.equal(git(destination, "diff", "--cached"), "");
 });
@@ -100,7 +102,7 @@ test("prepares the settings transfer fixture with a real process test and a dete
   const report = JSON.parse(check.stdout);
   assert.equal(report.checkedCitations, 14);
   assert.deepEqual(report.documents.flatMap(result => result.issues).map(issue => [issue.path, issue.detail]), [["docs/storage.md", "not covered by metadata sources"]]);
-  const before = await readFile(join(destination, ".agent/context/behavior.md"));
+  const before = await readFile(join(destination, ".agent/context/behavior/index.md"));
   assert.notEqual(spawnSync(process.execPath, args, { encoding: "utf8" }).status, 0);
-  assert.deepEqual(await readFile(join(destination, ".agent/context/behavior.md")), before);
+  assert.deepEqual(await readFile(join(destination, ".agent/context/behavior/index.md")), before);
 });

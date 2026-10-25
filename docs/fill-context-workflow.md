@@ -1,12 +1,12 @@
 # Fill-context workflow
 
-This workflow turns a layout-v2 scaffold into useful, evidence-backed project
+This workflow turns a layout-v3 scaffold into useful, evidence-backed project
 context. The templates are prompts, not answers: an agent must inspect the
 actual repository and record what it verified, what remains draft, and what does
 not apply.
 
 See the [populated ctx example](examples/ctx/README.md) for a complete default
-set, a focused behavior child, a sample local checkpoint, and the lifecycle
+layout-v2 set, a focused behavior child, a sample local checkpoint, and the lifecycle
 from draft context to verification, maintenance, and fresh-clone hydration.
 
 For reusable agent-facing guidance, see [the ctx skill and activation guide](agent-skill.md).
@@ -19,7 +19,7 @@ Installing a skill is separate from generating or filling a scaffold.
 - `ctx init --mode local` keeps the whole selected folder ignored through the
   repository's common `.git/info/exclude`.
 - `ctx` never stages or commits files in either mode.
-- The v2 core is intentionally small. New scaffolds select behavior and glossary
+- The core is intentionally small. New scaffolds select behavior and glossary
   by default for domain rules and project-specific language; omit both for
   a core-only scaffold with `--without behavior,glossary`. Select other add-ons
   with repeatable/comma-friendly `--with`, or install one later:
@@ -51,21 +51,21 @@ verify important claims against current source.
 
 ## 3. Fill context from parent summary to specialized detail
 
-1. **`context/overview.md`** — users, current purpose, capabilities, boundaries,
+1. **`context/overview/index.md`** — users, current purpose, capabilities, boundaries,
    non-goals, maturity, and canonical roadmap pointers. Keep technical flow
    detail out of this parent summary.
-2. **`context/behavior.md`** — core business/domain concepts, relationships,
+2. **`context/behavior/index.md`** — core business/domain concepts, relationships,
    workflows, decision rules, state transitions, and expected outcomes. Label
    implemented behavior separately from intended changes and cite code, tests,
    or canonical owner-approved requirements. ctx generates only this parent
-   template. When deeper explanations are needed, the developer or agent creates
+   template. During the first population pass, the developer or agent creates
    focused children under `context/behavior/` based on the inspected project,
    gives each child its own metadata, and links it from the parent.
-3. **`context/architecture.md`** — components, entrypoints, implementation flows,
+3. **`context/architecture/index.md`** — components, entrypoints, implementation flows,
    technical invariants, state ownership, lifecycle/concurrency where relevant,
    and active runtime integrations. Link to behavior for domain rules and cite
    source paths.
-4. **`context/caveats.md`** — confirmed limitations and gotchas that change how
+4. **`context/caveats/index.md`** — confirmed limitations and gotchas that change how
    an agent should work. Include evidence and a safe workaround; distinguish
    product behavior from environment constraints. Do not create a speculative
    bug backlog or label an observed limitation an accepted tradeoff without an
@@ -91,7 +91,7 @@ branch, review tools, or required checks.
 
 ## 4. Maintain document metadata
 
-Every v2 project-fact document begins with one JSON line:
+Every v2/v3 project-fact document begins with one JSON line:
 
 ```html
 <!-- ctx:doc {"status":"draft","verifiedAt":"","sources":[]} -->
@@ -170,14 +170,20 @@ Useful guidance targets are:
 |---|---:|
 | `INDEX.md` | about 250 words |
 | `local/CONTINUE.md` | about 300 words |
-| `context/overview.md` | about 500 words |
-| Other project-fact documents (`context/**/*.md`) | about 800 words |
+| `context/overview/index.md` | about 500 words |
+| Other category indexes (`context/<category>/index.md`) | about 400 words |
+| Focused topic documents (`context/**/*.md`, excluding indexes) | about 800 words |
 
 These are guidance, not hard limits. For the listed mechanics and project-fact
 documents, `ctx status` emits non-failing warnings only around twice those sizes
-so legitimate project complexity is not marked unhealthy. When a file grows,
-create a coherent child document and link it from its parent. For behavior,
-INDEX routes to `context/behavior.md` first, and that parent routes to the
+so legitimate project complexity is not marked unhealthy. Do not wait for a
+warning: independently useful explanations get topic files during initial
+population. Keep genuinely short related facts together. Indexes supply shared
+orientation and descriptive routes, not copied child detail. A glossary may keep
+short definitions together; use term files for substantial definitions, aliases,
+examples, or independently scoped evidence. Verification of an index never
+certifies its children; check every relevant document independently. For behavior,
+INDEX routes to `context/behavior/index.md` first, and that parent routes to the
 relevant children. Use INDEX's project-owned routing section for additional
 direct routes when useful; lifecycle updates preserve that section. Put the same
 `ctx:doc` metadata line on each nested project-fact Markdown document so status
@@ -213,7 +219,15 @@ For each affected fact document:
    commit and its listed evidence; otherwise leave it draft;
 5. update local continuation with any remaining work.
 
-## V1 compatibility
+## Existing-layout compatibility
+
+Read the persisted layout before editing. Layout v2 retains the flat
+`context/<category>.md` parent paths, with children under `context/<category>/`.
+Apply the same ownership and evidence rules at those existing paths. Do not
+move files or edit config to make an old scaffold resemble v3. No automatic
+conversion is performed by init, add, update, doctor, or status.
+
+### V1 compatibility
 
 Do not manually reshape an existing schema-v1 or config-less legacy scaffold to
 match this workflow. V1 retains its original file set, root continuation where

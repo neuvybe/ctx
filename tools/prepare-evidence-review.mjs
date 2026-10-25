@@ -32,16 +32,20 @@ execFileSync(cli, ["init", prepared.repository, "--folder", ".agent", "--mode", 
   stdio: ["ignore", "pipe", "pipe"],
 });
 const verifiedOn = new Date().toISOString().slice(0, 10);
+const config = JSON.parse(await readFile(join(prepared.repository, ".agent/config.json"), "utf8"));
+if (![2, 3].includes(config.layoutVersion)) throw new Error("Review fixtures require layout v2 or v3");
 for (const name of ["overview", "behavior", "architecture", "caveats", "glossary"]) {
   const fixtureDirectory = fixtureName === "booking-demo" ? "evidence-review" : "settings-review";
   const template = await readFile(join(repository, "evals/ctx-skill/fixtures", fixtureDirectory, name + ".md"), "utf8");
-  const rendered = template.replaceAll("{{SOURCE_COMMIT}}", prepared.sourceCommit)
+  let rendered = template.replaceAll("{{SOURCE_COMMIT}}", prepared.sourceCommit)
     .replaceAll("{{VERIFIED_DATE}}", verifiedOn);
-  await writeFile(join(prepared.repository, ".agent/context", name + ".md"), rendered);
+  if (config.layoutVersion === 3) rendered = rendered.replaceAll(/\]\((overview|behavior|architecture|caveats|glossary)\.md\)/g, "](../$1/index.md)");
+  const path = config.layoutVersion === 3 ? join(name, "index.md") : name + ".md";
+  await writeFile(join(prepared.repository, ".agent/context", path), rendered);
 }
 for (const name of ["README.md", "INDEX.md"]) {
   const file = join(prepared.repository, ".agent", name);
   const content = await readFile(file, "utf8");
   await writeFile(file, content.replaceAll("{{OWNER_INSTRUCTIONS_PATH}}", "AGENTS.md"));
 }
-console.log(JSON.stringify({ ...prepared, contextFolder: ".agent", verifiedOn }, null, 2));
+console.log(JSON.stringify({ ...prepared, contextFolder: ".agent", layoutVersion: config.layoutVersion, verifiedOn }, null, 2));

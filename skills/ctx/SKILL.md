@@ -20,7 +20,9 @@ ask which scope to use.
 Inspect existing config and `ctx --version` when command compatibility matters.
 Read [the CLI contract](references/cli.md) when initializing, extending,
 refreshing managed guidance, handling a custom folder, or encountering an older
-layout. This skill describes layout v2; do not reshape legacy scaffolds to match.
+layout. New scaffolds use layout v3: facts live at `context/<category>/index.md`.
+Layout v2 retains `context/<category>.md`; use its existing parents and routes.
+Do not move files or edit config to reshape an existing scaffold.
 
 Skill activation is not authorization to initialize, update, change sharing
 mode, install add-ons, stage, commit, or publish. Answer/review tasks remain
@@ -34,8 +36,10 @@ After owner instructions, read any installed owner-ratified operating
 supplement, local continuation, and INDEX. Continuation is one clone's
 checkpoint: confirm branch and worktree state before relying on it.
 
-Follow INDEX to the smallest relevant fact set. Read a parent before its
-relevant child; do not concatenate all context by default. Load architecture
+Follow INDEX to the smallest relevant fact set. Read a category index for shared
+orientation, then only needed topic files; do not concatenate all children.
+Once scope is understood, an explicit topic route or targeted search can avoid
+re-reading every parent. Descriptive names and term aliases aid discovery. Load architecture
 for implementation and behavior for domain rules. Follow glossary or other
 add-on routes only when that concern is needed.
 
@@ -59,11 +63,11 @@ scope. Fill installed documents by ownership:
 
 | Concern | Owner |
 |---|---|
-| Purpose, users, scope, capabilities, and non-goals | `context/overview.md` |
-| Domain concepts, decisions, workflows, transitions, and outcomes | `context/behavior.md`, when installed |
-| Components, implementation flows, and technical invariants | `context/architecture.md` |
-| Confirmed limitations and decision-relevant gotchas | `context/caveats.md` |
-| Ambiguous project-specific terminology | `context/glossary.md`, when installed |
+| Purpose, users, scope, capabilities, and non-goals | `context/overview/index.md` |
+| Domain concepts, decisions, workflows, transitions, and outcomes | `context/behavior/index.md`, when installed |
+| Components, implementation flows, and technical invariants | `context/architecture/index.md` |
+| Confirmed limitations and decision-relevant gotchas | `context/caveats/index.md` |
+| Ambiguous project-specific terminology | `context/glossary/index.md`, when installed |
 | Representations, extension points, or team procedures | Relevant installed add-on |
 
 Do not silently add omitted documents or manufacture requirements. Distinguish
@@ -73,15 +77,17 @@ An observed limitation is not an accepted tradeoff without an owner decision
 or explicit requirement. Record "owner decision not documented" when unknown.
 
 Remove filled template prompts and inapplicable sections. Keep parent summaries
-short; prefer linking canonical detail over copying it. If a coherent topic
-needs deeper explanation, author a child under `context/`, give it its own
-scope and metadata, and link it from the owning parent. Behavior topics belong
+short; prefer linking canonical detail over copying it. During initial
+population, give independently useful explanations sibling topic files with
+their own scope and metadata; do not wait for a size warning. Keep genuinely
+short related facts or definitions together rather than forcing one file per
+term. Indexes summarize and route; avoid duplicating complete child content. Behavior topics belong
 under `context/behavior/`; ctx does not generate their names or contents.
 INDEX routes tasks, not duplicated facts, and behavior routes through its parent.
 
 ## Record evidence honestly
 
-Every layout-v2 fact document, including nested Markdown children, has exactly
+Every layout-v2/v3 fact document, including nested Markdown children, has exactly
 one metadata line:
 
 ```html
@@ -93,7 +99,8 @@ one metadata line:
   in `sources`. Paths are relative to the target repository, not the context
   folder. Include supporting files cited in the prose, not just the main source
   file. Do not cite the fact document itself as evidence. This records scoped
-  evidence checking, not automatic human approval.
+  evidence checking, not automatic human approval. An index's verification never certifies linked
+  topics; inspect each relevant document's readiness and evidence.
 - Listed sources must be tracked at that commit and match current evidence.
   Check relevant working-tree/staged changes as well as HEAD. Uncommitted source
   changes cannot be certified by stamping the old HEAD hash; leave affected
