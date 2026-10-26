@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-// initFlatWithOptionsForTest materializes a previously released scaffold.
-// It deliberately renders the frozen catalog rather than changing production
-// creation defaults or testing old lifecycle operations on a v3 descriptor.
+// initFlatWithOptionsForTest materializes a flat-layout scaffold from today's
+// frozen catalog. The genuine historical snapshots in premerge_compat_test.go
+// separately guard against regressions shared by this helper and production.
 func initFlatWithOptionsForTest(t *testing.T, repo string, raw InitOptions) error {
 	t.Helper()
 	opts, err := normalizeInitOptions(raw)

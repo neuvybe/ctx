@@ -1,0 +1,36 @@
+# `team_context-2.0/` — agent context for premerge-project
+
+<!-- ctx:managed begin readme-platform -->
+This folder keeps durable project facts with explicit readiness separate from
+machine-local working state. The active visibility mode is **`local`**. In
+team mode, durable files are available for review and sharing while
+`local/CONTINUE.md` stays ignored. In local mode, Git ignores the whole folder.
+`ctx` never stages or commits files.
+
+## Contents
+
+- `INDEX.md` routes agents to the smallest relevant context set.
+- `context/overview.md`, `architecture.md`, and `caveats.md` hold core project
+  facts. New scaffolds select behavior and glossary by default: behavior owns
+  business/domain rules and outcomes; glossary clarifies project-specific terms.
+  Other add-ons contribute focused documents when selected.
+- `local/CONTINUE.md` holds current clone/session state and is never a source of
+  durable project truth.
+
+Read the project owner's canonical instructions first, then any optional
+`OPERATING.md`, `local/CONTINUE.md`, `INDEX.md`, and only the fact documents the
+task needs.
+
+## Maintenance
+
+- Keep each fact document's `ctx:doc` metadata honest: `draft`, `verified`, or
+  `not-applicable`; verification records a commit/date and source paths.
+- Run `ctx doctor --folder team_context-2.0` for scaffold and Git-boundary checks.
+  Run `ctx status --folder team_context-2.0` for content-readiness and size guidance.
+- Run `ctx update --folder team_context-2.0` after upgrading ctx, then review changes.
+- Treat ignored context as private from Git, not as secret storage.
+<!-- ctx:managed end readme-platform -->
+
+## Project-owned pointer
+
+Canonical owner instructions: {{OWNER_INSTRUCTIONS_PATH}}
