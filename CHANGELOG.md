@@ -1,3 +1,16 @@
+# [0.5.0](https://github.com/neuvybe/ctx/compare/v0.4.0...v0.5.0) (2026-10-26)
+
+
+* feat!: add portable ctx skill and folder-first context layout ([#4](https://github.com/neuvybe/ctx/issues/4)) ([1f78ef6](https://github.com/neuvybe/ctx/commit/1f78ef6cd0c164db37ba15f136d749b902bc2e67))
+
+
+### BREAKING CHANGES
+
+* New initialization now uses layout v3 and
+context/<category>/index.md instead of flat context/<category>.md files.
+Existing scaffolds retain their saved layout and paths; lifecycle commands
+do not convert them automatically.
+
 # [0.4.0](https://github.com/neuvybe/ctx/compare/v0.3.0...v0.4.0) (2026-10-07)
 
 
