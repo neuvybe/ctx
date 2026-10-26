@@ -84,7 +84,7 @@ func Update(repo, folder string) ([]string, error) {
 	if project == "" {
 		project = filepath.Base(abs)
 	}
-	addonRoutes, err := addonRoutesMarkdown(state.Config.Addons)
+	addonRoutes, err := addonRoutesMarkdown(layout.Version, state.Config.Addons)
 	if err != nil {
 		return nil, err
 	}

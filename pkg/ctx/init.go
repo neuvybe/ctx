@@ -348,7 +348,7 @@ func InitWithOptions(repo string, rawOpts InitOptions) error {
 	if err != nil {
 		return err
 	}
-	addonRoutes, err := addonRoutesMarkdown(opts.Addons)
+	addonRoutes, err := addonRoutesMarkdown(CurrentLayoutVersion, opts.Addons)
 	if err != nil {
 		return err
 	}

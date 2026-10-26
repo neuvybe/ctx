@@ -20,7 +20,7 @@ release-build:
 test:
 	go test -race ./...
 
-# Smoke-test v2 init/add/update/doctor/status plus local mode.
+# Smoke-test v3 init/add/update/doctor/status plus local mode.
 smoke: build
 	@set -eu; \
 	ctx_smoke_tmp=$$(mktemp -d); \
@@ -31,12 +31,12 @@ smoke: build
 	test ! -s "$$ctx_smoke_tmp/team-init.err"; \
 	test -f "$$ctx_smoke_tmp/team/.ctx/config.json"; \
 	grep -q '"schemaVersion": 2' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
-	grep -q '"layoutVersion": 2' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
+	grep -q '"layoutVersion": 3' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
 	test ! -e "$$ctx_smoke_tmp/team/.ctx/.ctx-version"; \
-	test -f "$$ctx_smoke_tmp/team/.ctx/context/behavior.md"; \
+	test -f "$$ctx_smoke_tmp/team/.ctx/context/behavior/index.md"; \
 	grep -q '"behavior"' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
-	grep -q 'context/behavior.md' "$$ctx_smoke_tmp/team/.ctx/INDEX.md"; \
-	test -f "$$ctx_smoke_tmp/team/.ctx/context/glossary.md"; \
+	grep -q 'context/behavior/index.md' "$$ctx_smoke_tmp/team/.ctx/INDEX.md"; \
+	test -f "$$ctx_smoke_tmp/team/.ctx/context/glossary/index.md"; \
 	grep -q '"glossary"' "$$ctx_smoke_tmp/team/.ctx/config.json"; \
 	test -f "$$ctx_smoke_tmp/team/.ctx/local/CONTINUE.md"; \
 	git -C "$$ctx_smoke_tmp/team" check-ignore -q .ctx/local/CONTINUE.md; \
@@ -52,8 +52,8 @@ smoke: build
 	grep -q 'behavior.*default for new scaffolds' "$$ctx_smoke_tmp/addons.out"; \
 	grep -q 'glossary.*default for new scaffolds' "$$ctx_smoke_tmp/addons.out"; \
 	./bin/$(BINARY) add "$$ctx_smoke_tmp/team" contracts >/dev/null; \
-	test -f "$$ctx_smoke_tmp/team/.ctx/context/contracts.md"; \
-	grep -q 'context/contracts.md' "$$ctx_smoke_tmp/team/.ctx/INDEX.md"; \
+	test -f "$$ctx_smoke_tmp/team/.ctx/context/contracts/index.md"; \
+	grep -q 'context/contracts/index.md' "$$ctx_smoke_tmp/team/.ctx/INDEX.md"; \
 	if ./bin/$(BINARY) status "$$ctx_smoke_tmp/team" >/dev/null 2>&1; then exit 1; fi; \
 	find "$$ctx_smoke_tmp/team/.ctx/context" -name '*.md' -exec perl -pi -e 's/"status":"draft"/"status":"not-applicable"/' {} +; \
 	./bin/$(BINARY) status "$$ctx_smoke_tmp/team" >/dev/null; \
@@ -72,7 +72,7 @@ smoke: build
 	test ! -s "$$ctx_smoke_tmp/local-init.err"; \
 	git -C "$$ctx_smoke_tmp/local" check-ignore -q .ctx/README.md; \
 	./bin/$(BINARY) doctor "$$ctx_smoke_tmp/local" >/dev/null; \
-	echo "smoke: v2 lifecycle + local mode checks passed"
+	echo "smoke: v3 lifecycle + local mode checks passed"
 
 clean:
 	rm -rf bin .gocache

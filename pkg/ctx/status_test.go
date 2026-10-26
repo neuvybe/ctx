@@ -456,14 +456,14 @@ func setupStatusRepo(t *testing.T) (string, string) {
 	}
 	if err := writeScaffoldConfig(dest, Config{
 		SchemaVersion:    currentSchemaVersion,
-		LayoutVersion:    CurrentLayoutVersion,
-		TemplateRevision: CurrentTemplateRevision,
+		LayoutVersion:    FlatLayoutVersion,
+		TemplateRevision: "2.0.1",
 		Project:          "status-test",
 		Mode:             ModeTeam,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	facts, err := ProjectFactDocuments(CurrentLayoutVersion, nil)
+	facts, err := ProjectFactDocuments(FlatLayoutVersion, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

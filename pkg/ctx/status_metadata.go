@@ -60,9 +60,12 @@ func documentWordWarningLimit(path string) int {
 		return 500
 	case "local/continue.md", "continue.md":
 		return 600
-	case "context/overview.md":
+	case "context/overview.md", "context/overview/index.md":
 		return 1000
 	default:
+		if strings.HasPrefix(path, "context/") && strings.HasSuffix(path, "/index.md") {
+			return 800
+		}
 		if strings.HasPrefix(path, "context/") && strings.HasSuffix(path, ".md") {
 			return 1600
 		}

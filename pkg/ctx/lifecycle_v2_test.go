@@ -10,7 +10,7 @@ import (
 
 func TestUpdateV2RefreshesNamedBlocksAndAdvancesTemplateRevision(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	dest := filepath.Join(repo, ".ctx")
@@ -46,8 +46,8 @@ func TestUpdateV2RefreshesNamedBlocksAndAdvancesTemplateRevision(t *testing.T) {
 	if bytes.Contains(after, []byte("STALE MANAGED CONTENT")) || !bytes.Contains(after, []byte("This folder keeps durable project facts")) {
 		t.Fatalf("v2 README managed body was not refreshed:\n%s", after)
 	}
-	if got := readLifecycleConfig(t, dest).TemplateRevision; got != CurrentTemplateRevision {
-		t.Fatalf("templateRevision = %q, want %q", got, CurrentTemplateRevision)
+	if got := readLifecycleConfig(t, dest).TemplateRevision; got != layouts[FlatLayoutVersion].TemplateRevision {
+		t.Fatalf("templateRevision = %q, want %q", got, layouts[FlatLayoutVersion].TemplateRevision)
 	}
 	if _, err := os.Lstat(filepath.Join(dest, ".ctx-version")); !os.IsNotExist(err) {
 		t.Fatalf("v2 update created legacy .ctx-version: %v", err)
@@ -77,7 +77,7 @@ func TestUpdateV2MarkerMismatchDoesNotMutateOrStampCurrent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := mkRepo(t)
-			if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+			if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 				t.Fatalf("InitWithOptions: %v", err)
 			}
 			dest := filepath.Join(repo, ".ctx")
@@ -120,7 +120,7 @@ func TestUpdateV2MarkerMismatchDoesNotMutateOrStampCurrent(t *testing.T) {
 
 func TestDoctorV2UsesConfigTemplateRevisionWithoutLegacyStamp(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	dest := filepath.Join(repo, ".ctx")
@@ -142,7 +142,7 @@ func TestDoctorV2UsesConfigTemplateRevisionWithoutLegacyStamp(t *testing.T) {
 
 func TestDoctorV2RejectsMarkerlessManagedDocument(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	readmePath := filepath.Join(repo, ".ctx", "README.md")
@@ -165,7 +165,7 @@ func TestDoctorV2RejectsMarkerlessManagedDocument(t *testing.T) {
 
 func TestDoctorRequiredOutputsFollowSelectedAddons(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"review"}}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"review"}}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	reviewPath := filepath.Join(repo, ".ctx", "workflows", "review.md")
@@ -182,7 +182,7 @@ func TestDoctorRequiredOutputsFollowSelectedAddons(t *testing.T) {
 
 func TestDoctorRejectsOrphanedAddonOutput(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"review"}}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"review"}}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	dest := filepath.Join(repo, ".ctx")
@@ -204,7 +204,7 @@ func TestDoctorRejectsOrphanedAddonOutput(t *testing.T) {
 
 func TestUpdateV2RejectsSymlinkedManagedParentWithoutOutsideWrite(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"review"}}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"review"}}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	dest := filepath.Join(repo, ".ctx")
@@ -244,7 +244,7 @@ func TestUpdateV2RejectsSymlinkedManagedParentWithoutOutsideWrite(t *testing.T) 
 
 func TestV2LifecycleRefusesTemplateRevisionDowngrade(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	dest := filepath.Join(repo, ".ctx")

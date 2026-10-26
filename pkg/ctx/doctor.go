@@ -78,8 +78,8 @@ func Doctor(repo, folder string) ([]Check, error) {
 		checks = append(checks, fail("layout catalog", expectedErr.Error()))
 		expectedFiles = nil
 	}
-	if stateErr == nil && !state.Legacy && layout.Version == CurrentLayoutVersion {
-		orphans, orphanErr := undeclaredAddonOutputs(dest, state.Config.Addons)
+	if stateErr == nil && !state.Legacy && layout.Version != LegacyLayoutVersion {
+		orphans, orphanErr := undeclaredAddonOutputs(dest, layout.Version, state.Config.Addons)
 		if orphanErr != nil {
 			checks = append(checks, fail("add-on catalog consistency", orphanErr.Error()))
 		} else if len(orphans) > 0 {
@@ -206,13 +206,13 @@ func Doctor(repo, folder string) ([]Check, error) {
 	return checks, nil
 }
 
-func undeclaredAddonOutputs(dest string, configured []string) ([]string, error) {
+func undeclaredAddonOutputs(dest string, layoutVersion int, configured []string) ([]string, error) {
 	selected, err := normalizeAddonSelection(configured)
 	if err != nil {
 		return nil, err
 	}
 	var orphans []string
-	for _, spec := range addonCatalog {
+	for _, spec := range addonCatalogForLayout(layoutVersion) {
 		if selected[spec.ID] {
 			continue
 		}

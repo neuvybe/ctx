@@ -1,0 +1,4 @@
+interface:
+  display_name: "ctx repository context"
+  short_description: "Use and maintain evidence-backed repository context"
+  default_prompt: "Use $ctx to work from this repository’s context within the requested task scope."

@@ -36,6 +36,8 @@ func TestDocumentWordWarningLimit(t *testing.T) {
 		"INDEX.md":                    500,
 		"local/CONTINUE.md":           600,
 		"context/overview.md":         1000,
+		"context/overview/index.md":   1000,
+		"context/glossary/index.md":   800,
 		"context/architecture/api.md": 1600,
 		"README.md":                   0,
 	}

@@ -13,7 +13,7 @@ func TestBehaviorAddonSupportsHierarchicalEvidenceAndPreservesProjectContent(t *
 	for _, mode := range []Mode{ModeTeam, ModeLocal} {
 		t.Run(string(mode), func(t *testing.T) {
 			repo := mkRepo(t)
-			if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: mode, Addons: []string{"glossary"}}); err != nil {
+			if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: mode, Addons: []string{"glossary"}}); err != nil {
 				t.Fatal(err)
 			}
 			dest := filepath.Join(repo, ".ctx")
@@ -25,7 +25,7 @@ func TestBehaviorAddonSupportsHierarchicalEvidenceAndPreservesProjectContent(t *
 			if _, err := Update(repo, ".ctx"); err != nil {
 				t.Fatalf("update existing scaffold before adoption: %v", err)
 			}
-			if got := addTestConfig(t, dest); got.TemplateRevision != CurrentTemplateRevision || !reflect.DeepEqual(got.Addons, []string{"glossary"}) {
+			if got := addTestConfig(t, dest); got.TemplateRevision != layouts[FlatLayoutVersion].TemplateRevision || !reflect.DeepEqual(got.Addons, []string{"glossary"}) {
 				t.Fatalf("update changed selected add-ons or failed to advance revision: %+v", got)
 			}
 			if _, err := os.Lstat(filepath.Join(dest, "context", "behavior.md")); !os.IsNotExist(err) {
@@ -130,7 +130,7 @@ func TestBehaviorAddonSupportsHierarchicalEvidenceAndPreservesProjectContent(t *
 
 func TestHydrationPreservesScaffoldCreatedBeforeDefaultBehavior(t *testing.T) {
 	repo := mkRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"glossary"}}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: ModeTeam, Addons: []string{"glossary"}}); err != nil {
 		t.Fatal(err)
 	}
 	dest := filepath.Join(repo, ".ctx")

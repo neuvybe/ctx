@@ -73,7 +73,7 @@ func TestTemplateFS(t *testing.T) {
 }
 
 func TestVersionedAndAddonTemplateFilesystems(t *testing.T) {
-	v2, err := TemplateFSForLayout(CurrentLayoutVersion)
+	v2, err := TemplateFSForLayout(FlatLayoutVersion)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,6 +89,37 @@ func TestVersionedAndAddonTemplateFilesystems(t *testing.T) {
 	}
 	if _, err := AddonTemplateFS("unknown"); err == nil {
 		t.Fatal("AddonTemplateFS accepted an unknown add-on")
+	}
+}
+
+func TestAddonTemplateFilesystemsFollowExplicitLayout(t *testing.T) {
+	for _, version := range []int{FlatLayoutVersion, CurrentLayoutVersion} {
+		for _, spec := range addonCatalogForLayout(version) {
+			fsys, err := AddonTemplateFSForLayout(version, spec.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var paths []string
+			if err := fs.WalkDir(fsys, ".", func(path string, entry fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if !entry.IsDir() {
+					paths = append(paths, path)
+				}
+				return nil
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(paths, []string{spec.Path}) {
+				t.Fatalf("layout %d %s templates = %v, want %s", version, spec.ID, paths, spec.Path)
+			}
+		}
+	}
+	for _, version := range []int{LegacyLayoutVersion, 99} {
+		if _, err := AddonTemplateFSForLayout(version, "glossary"); err == nil {
+			t.Fatalf("accepted unsupported add-on layout %d", version)
+		}
 	}
 }
 
@@ -111,7 +142,7 @@ func TestInitWithOptionsTeam(t *testing.T) {
 	}
 
 	// context/*.md {{PROJECT}} substituted too.
-	ov, err := os.ReadFile(filepath.Join(repo, ".ctx", "context", "overview.md"))
+	ov, err := os.ReadFile(filepath.Join(repo, ".ctx", "context", "overview", "index.md"))
 	if err != nil {
 		t.Fatalf("read overview.md: %v", err)
 	}
@@ -122,10 +153,10 @@ func TestInitWithOptionsTeam(t *testing.T) {
 	if strings.Contains(string(idx), "{{ADDON_ROUTES}}") {
 		t.Errorf("INDEX.md still has {{ADDON_ROUTES}}")
 	}
-	if !strings.Contains(string(idx), "context/glossary.md") {
+	if !strings.Contains(string(idx), "context/glossary/index.md") {
 		t.Errorf("INDEX.md missing default glossary route")
 	}
-	if !strings.Contains(string(idx), "context/behavior.md") {
+	if !strings.Contains(string(idx), "context/behavior/index.md") {
 		t.Errorf("INDEX.md missing default behavior route")
 	}
 	if _, err := os.Lstat(filepath.Join(repo, ".ctx", ".ctx-version")); !os.IsNotExist(err) {
@@ -147,7 +178,7 @@ func TestInitWithOptionsTeam(t *testing.T) {
 		t.Errorf("default add-ons = %v, want behavior and glossary", state.Config.Addons)
 	}
 	for _, name := range []string{"behavior", "glossary"} {
-		content, err := os.ReadFile(filepath.Join(repo, ".ctx", "context", name+".md"))
+		content, err := os.ReadFile(filepath.Join(repo, ".ctx", "context", name, "index.md"))
 		if err != nil {
 			t.Fatalf("default %s missing: %v", name, err)
 		}
@@ -264,7 +295,7 @@ func TestInitWithAddonsRendersOnlySelectedRoutes(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"context/contracts.md", "context/glossary.md"} {
+	for _, name := range []string{"context/contracts/index.md", "context/glossary/index.md"} {
 		if _, err := os.Stat(filepath.Join(repo, ".ctx", filepath.FromSlash(name))); err != nil {
 			t.Fatalf("selected add-on %s missing: %v", name, err)
 		}
@@ -276,7 +307,7 @@ func TestInitWithAddonsRendersOnlySelectedRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"context/contracts.md", "context/glossary.md"} {
+	for _, name := range []string{"context/contracts/index.md", "context/glossary/index.md"} {
 		if !strings.Contains(string(index), name) {
 			t.Fatalf("INDEX missing selected route %s:\n%s", name, index)
 		}

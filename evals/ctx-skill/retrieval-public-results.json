@@ -1,0 +1,928 @@
+{
+  "runDate": "2026-10-25",
+  "host": "Pi 1.1.0; read, grep, find, ls; explicit skill and scope guard; no saved native sessions",
+  "fixture": {
+    "topicCount": 15,
+    "semanticHash": "41a6bb995d0d90d54fe9b0f0332b7427b76010c5964582a37f45a29e9e5c07ba",
+    "sourceHashes": {
+      "README.md": "a9501e3437d66f58e015c5045a9df97ce6123131c2f34ad96db8b61fdf1f96fa",
+      "pkg/ctx/add.go": "ba139de59b6d418af22f1eca95b2de5d024095bebf6ee9bd7ac393807d7980b7",
+      "pkg/ctx/catalog.go": "99315ba7a89bb417247a3640097af55c0e5583ae8938792128f6f3f327b0d571",
+      "pkg/ctx/config.go": "8d3bc6d72dae9f21b960cb69043b03f40def9ca3056ddc750e3abcada07f6cfe",
+      "pkg/ctx/doctor.go": "aae34b375051c25e0803f10542effab6b895f7ebefaeb1d7f3f9f13d3a18b431",
+      "pkg/ctx/embed.go": "4d8baf5b86acc30cf99d5bf0d710b19476276eb1838db086e2471b0eb0156197",
+      "pkg/ctx/init.go": "29613c5f9df1881d02b1da55258ff3e69643e7f5a293a0e6788c061e4a496e58",
+      "pkg/ctx/status.go": "eaea4094125e47207874bd4b4551b751429bc6520ff5e8945ba3a987036f34c8",
+      "pkg/ctx/status_metadata.go": "b04aac0e20e6dbbb113ffa5ce0cb1a6391b1ec0e41c7b46e87b5a94c8d27b8f3",
+      "pkg/ctx/template/v3/README.md": "c8e5d69406f88edefd2ce18f964c7e2b77791c3220089d9ce5dd409c5e32bbf9",
+      "pkg/ctx/template/v3/local/CONTINUE.md": "717acfbdb76d0004ee2a1830933c304fadbd1922bc37447e8b6993c725fe0b2e",
+      "pkg/ctx/update.go": "f54c4f643ba8a8aeddc232d39f6027ae1b5df65cdbb5e3ca4eadecf4b2bd295f",
+      "skills/ctx/references/evidence-review.md": "d9e748acc41030f2f111c45c72ad2d49952a3f0d11006174c49455508159901b"
+    },
+    "installedSkillHashes": {
+      ".agents/skills/ctx/SKILL.md": "99988e6037b1ffe849e60de3564a7ecaf16d13cca2f35dcc2245d21b4c96bed4",
+      ".agents/skills/ctx/agents/openai.yaml": "70a0713a2b91bd4bc2882dac2c0c8bb3b4051d882834e991408b81e2a9909cbb",
+      ".agents/skills/ctx/references/cli.md": "3ce35a757bb2aa647e7c7a77c1d9f3aea5e9b7b5ada5ac6f573d788f41884a75",
+      ".agents/skills/ctx/references/evidence-review.md": "d9e748acc41030f2f111c45c72ad2d49952a3f0d11006174c49455508159901b",
+      ".agents/skills/ctx/scripts/check-evidence-citations.mjs": "942313a459d31b3ed03c701d78b4ff3eba935695bddb0114aeb27bb1bc348c8b"
+    },
+    "cliSha256": "46d5c0b21aab1de3cc5e4f41399e9e76401488999257a6a23b2544ba43bac942"
+  },
+  "limits": {
+    "timeMs": 360000,
+    "requestedToolCallBudget": 24,
+    "termination": "Best effort after the first over-budget start; parallel calls can overshoot",
+    "automaticProviderRetries": "GLM failures each emitted four provider-error messages within one Pi invocation; no evaluator-started retries"
+  },
+  "audits": {
+    "equivalentSemanticPayloads": true,
+    "equivalentSourceBytes": true,
+    "equivalentInstalledSkills": true,
+    "allWorkspaceManifestsUnchanged": true,
+    "allRecordedToolPathsInScope": true,
+    "nativeReasoningOrSystemMessagesRetained": false
+  },
+  "trials": [
+    {
+      "task": "Focused hydration question",
+      "layout": "Flat category documents",
+      "configuredProvider": "ollama",
+      "configuredModel": "glm-5.3:cloud",
+      "thinking": "No explicit override",
+      "runtimeReportedModels": [
+        "ollama/glm-5.3:cloud"
+      ],
+      "sourceCommit": "4cb15d81aaecc1a7e4d8b5b5c2c4495f0b5faf2a",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWhat precisely does ctx mean by hydration? In a fresh clone of an existing team scaffold, what can init create, what does it preserve, and can it change installed add-ons? Explain the important refusal boundaries and cite source.",
+      "runtime": {
+        "code": 0,
+        "signal": null,
+        "interrupted": null
+      },
+      "error": "Connection error.",
+      "elapsedMs": 14390,
+      "toolStarts": 0,
+      "completedToolResults": 0,
+      "toolOutputUtf8Bytes": 0,
+      "contextOutputUtf8Bytes": 0,
+      "calls": [],
+      "final": "",
+      "workspace": {
+        "entryCount": 46,
+        "beforeManifestSha256": "cf66eede08affc788d0c679cee347136c9ddc718e888cf61d5e50fbb0b46acd7",
+        "afterManifestSha256": "cf66eede08affc788d0c679cee347136c9ddc718e888cf61d5e50fbb0b46acd7",
+        "headBefore": "4cb15d81aaecc1a7e4d8b5b5c2c4495f0b5faf2a",
+        "headAfter": "4cb15d81aaecc1a7e4d8b5b5c2c4495f0b5faf2a",
+        "indexBefore": "27aa1f50924d71f9edfcc90f9edfb583cb7086f1c3ea23a44eb0e5670ebd0a70",
+        "indexAfter": "27aa1f50924d71f9edfcc90f9edfb583cb7086f1c3ea23a44eb0e5670ebd0a70",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    },
+    {
+      "task": "Focused hydration question",
+      "layout": "Folder-first category indexes and topics",
+      "configuredProvider": "ollama",
+      "configuredModel": "glm-5.3:cloud",
+      "thinking": "No explicit override",
+      "runtimeReportedModels": [
+        "ollama/glm-5.3:cloud"
+      ],
+      "sourceCommit": "ecff022e622a0b77353bd04232fb58cd2e216736",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWhat precisely does ctx mean by hydration? In a fresh clone of an existing team scaffold, what can init create, what does it preserve, and can it change installed add-ons? Explain the important refusal boundaries and cite source.",
+      "runtime": {
+        "code": 0,
+        "signal": null,
+        "interrupted": null
+      },
+      "error": "Connection error.",
+      "elapsedMs": 14302,
+      "toolStarts": 0,
+      "completedToolResults": 0,
+      "toolOutputUtf8Bytes": 0,
+      "contextOutputUtf8Bytes": 0,
+      "calls": [],
+      "final": "",
+      "workspace": {
+        "entryCount": 66,
+        "beforeManifestSha256": "f3cf50d8ff8fa9b150d36be8d49287fdcbd9769651dc03778dafeae1ff1137af",
+        "afterManifestSha256": "f3cf50d8ff8fa9b150d36be8d49287fdcbd9769651dc03778dafeae1ff1137af",
+        "headBefore": "ecff022e622a0b77353bd04232fb58cd2e216736",
+        "headAfter": "ecff022e622a0b77353bd04232fb58cd2e216736",
+        "indexBefore": "e6081f7d3fbef1e61359dfa89823effb68f393cf14a263b7080bbf3eae9e942d",
+        "indexAfter": "e6081f7d3fbef1e61359dfa89823effb68f393cf14a263b7080bbf3eae9e942d",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    },
+    {
+      "task": "Focused hydration question",
+      "layout": "Folder-first category indexes and topics",
+      "configuredProvider": "anthropic",
+      "configuredModel": "claude-opus-4-8",
+      "thinking": "high",
+      "runtimeReportedModels": [
+        "anthropic/claude-opus-4-8"
+      ],
+      "sourceCommit": "bda869f50ce392d30c3f955d83a16eaf17b8f46c",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWhat precisely does ctx mean by hydration? In a fresh clone of an existing team scaffold, what can init create, what does it preserve, and can it change installed add-ons? Explain the important refusal boundaries and cite source.",
+      "runtime": {
+        "code": 0,
+        "signal": null,
+        "interrupted": null
+      },
+      "error": null,
+      "elapsedMs": 61063,
+      "toolStarts": 10,
+      "completedToolResults": 10,
+      "toolOutputUtf8Bytes": 45488,
+      "contextOutputUtf8Bytes": 664,
+      "calls": [
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./AGENTS.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 409,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/SKILL.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 9258,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/local/CONTINUE.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 97,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/INDEX.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 567,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references/cli.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 4890,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references"
+          },
+          "returnedUtf8Bytes": 25,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "."
+          },
+          "returnedUtf8Bytes": 53,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./pkg"
+          },
+          "returnedUtf8Bytes": 4,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./pkg/ctx"
+          },
+          "returnedUtf8Bytes": 103,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./pkg/ctx/init.go",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 30082,
+          "isError": false
+        }
+      ],
+      "final": "## What ctx means by \"hydration\"\n\n**Hydration** is init's narrow repair action for a **fresh clone of an existing team-mode scaffold**: it regenerates only the *missing machine-local state* (the ignored `local/CONTINUE.md`) without touching any durable/shared file. Because `local/` is git-ignored, a fresh clone has the shared context but no continuation file; hydration fills just that gap.\n\nSource: the `InitWithOptions` doc comment —\n> \"On a fresh clone of a team scaffold, it also hydrates the missing ignored `local/CONTINUE.md` without changing any durable file.\"\n(`pkg/ctx/init.go`, comment above `InitWithOptions`)\n\nDispatch to hydration happens when the folder already exists as a directory: `return hydrateTeamLocalState(...)` (`pkg/ctx/init.go`, in `InitWithOptions`).\n\n## What init can create, preserve, and whether it touches add-ons\n\nFrom `hydrateTeamLocalState` (`pkg/ctx/init.go`):\n\n**Creates (only):**\n- The `local/` directory *if absent* (`os.Mkdir(localDir, ...)`), and\n- The local continuation file (the template document marked `Local`), published via `os.Link` so it never overwrites a concurrently created file.\n\n**Preserves:**\n- All shared/durable files — it reads but never rewrites them (it only *verifies* required outputs exist and are git-visible).\n- Project identity (reused from config, or derived read-only from README/INDEX for legacy).\n- The doc comment states it hydrates \"without changing any durable file,\" and cli.md confirms \"Shared files and configured add-ons remain unchanged.\"\n\n**Can it change installed add-ons? No.** If add-ons are passed explicitly and differ from the saved config, it refuses:\n```\n%s already exists with add-ons %v; init cannot change add-ons (use `ctx add`)\n```\n(`pkg/ctx/init.go`, `hydrateTeamLocalState`; the `addonsExplicit && !equalStrings(...)` guard). cli.md: \"An existing scaffold does not adopt newly introduced defaults through update or hydration.\" SKILL.md: changing add-ons is `ctx add`, not init.\n\n## Refusal boundaries (with source)\n\nAll from `hydrateTeamLocalState` in `pkg/ctx/init.go` unless noted:\n\n1. **Not a directory at the target path** → `\"%s already exists and is not a directory\"` (guard in `InitWithOptions`).\n2. **Unreadable/invalid scaffold state** → `\"already exists and cannot be hydrated\"`.\n3. **Mode conflict / no conversion** — if the request isn't team mode, or the existing scaffold is legacy or local mode → `\"refusing to overwrite or convert it\"`. Init will not convert local/legacy scaffolds to team.\n4. **Add-on change attempt** → `\"init cannot change add-ons (use `ctx add`)\"` (see above).\n5. **Existing continuation present** → `\"%s already exists — refusing to overwrite\"`. Hydration never clobbers an existing `local/CONTINUE.md`.\n6. **Ambiguous layout** — an unexpected root `CONTINUE.md` → `\"refusing ambiguous hydration\"`.\n7. **Incomplete scaffold** — any required shared output missing → `\"cannot hydrate incomplete team scaffold: <name>\"`. Init repairs only local state, not missing shared docs.\n8. **Git-privacy/visibility violations** — shared paths must be git-visible (`verifyTeamPathsVisible`) and `local/` must remain ignored (`verifyTeamLocalPrivate`); failure aborts and rolls back the just-written continuation (`rollbackHydratedContinuation`).\n\nBroader boundaries confirmed in `.agents/skills/ctx/references/cli.md` (\"Creation, sharing, and hydration\"):\n> \"A valid existing team scaffold with missing ignored continuation can be hydrated by init. Shared files and configured add-ons remain unchanged. Existing continuation, incomplete scaffolds, and mode conflicts are refused. Init does not convert existing local/legacy scaffolds, reset their contents, or stage/commit files.\"\n\nAnd `SKILL.md`: \"initialize only a missing scaffold or hydrate missing team-local state through the CLI… Do not replace an existing scaffold to make initialization succeed.\" Init never stages/commits.\n\n## Evidence limits\n\n- This is a **read-only source snapshot** (per AGENTS.md); I inspected code and docs but did not build, run, or test the CLI. Observed behavior is read from `pkg/ctx/init.go`, not executed.\n- The Go source and the skill/CLI documentation **agree** on every material claim above; where they could diverge, cli.md says to trust the installed CLI's actual help/config. The embedded templates and config schema were not separately exercised.\n- `.ctx/local/CONTINUE.md` reports no work in progress and `.ctx/INDEX.md` contains no project facts about this topic, so the answer rests on source + skill references.\n\n## Documents used\n\n- `AGENTS.md` (owner instructions, read-only constraints)\n- `.agents/skills/ctx/SKILL.md` (scope, hydration vs. add, refusal posture)\n- `.agents/skills/ctx/references/cli.md` (\"Creation, sharing, and hydration\" and \"Extend deliberately\")\n- `pkg/ctx/init.go` (`InitWithOptions`, `hydrateTeamLocalState`, `hydrationProject`, `rollbackHydratedContinuation` — authoritative behavior)\n- `.ctx/local/CONTINUE.md` and `.ctx/INDEX.md` (confirmed no in-progress work or relevant project facts)",
+      "workspace": {
+        "entryCount": 66,
+        "beforeManifestSha256": "cfb5c7253aa54ece46e3934169c860aa7a1a10a4b97a2e5cbea3f9a60e059bf1",
+        "afterManifestSha256": "cfb5c7253aa54ece46e3934169c860aa7a1a10a4b97a2e5cbea3f9a60e059bf1",
+        "headBefore": "bda869f50ce392d30c3f955d83a16eaf17b8f46c",
+        "headAfter": "bda869f50ce392d30c3f955d83a16eaf17b8f46c",
+        "indexBefore": "0cd0d13d91ebf9234ee7e736519797721554bd1433e0cf7c52386b889d2cf02f",
+        "indexAfter": "0cd0d13d91ebf9234ee7e736519797721554bd1433e0cf7c52386b889d2cf02f",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    },
+    {
+      "task": "Focused hydration question",
+      "layout": "Flat category documents",
+      "configuredProvider": "anthropic",
+      "configuredModel": "claude-opus-4-8",
+      "thinking": "high",
+      "runtimeReportedModels": [
+        "anthropic/claude-opus-4-8"
+      ],
+      "sourceCommit": "38db0b47e2d38b640bde25c9518484490c3c16a1",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWhat precisely does ctx mean by hydration? In a fresh clone of an existing team scaffold, what can init create, what does it preserve, and can it change installed add-ons? Explain the important refusal boundaries and cite source.",
+      "runtime": {
+        "code": 0,
+        "signal": null,
+        "interrupted": null
+      },
+      "error": null,
+      "elapsedMs": 32650,
+      "toolStarts": 6,
+      "completedToolResults": 6,
+      "toolOutputUtf8Bytes": 15216,
+      "contextOutputUtf8Bytes": 634,
+      "calls": [
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./AGENTS.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 409,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/SKILL.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 9258,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/local/CONTINUE.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 97,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/INDEX.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 537,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references/cli.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 4890,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references"
+          },
+          "returnedUtf8Bytes": 25,
+          "isError": false
+        }
+      ],
+      "final": "## What ctx means by \"hydration\"\n\nHydration is narrowly defined: it is `ctx init` **filling in missing team-local state** on an already-valid team scaffold — specifically a missing ignored continuation file. It is not re-initialization and not fact generation.\n\n> \"A valid existing team scaffold with missing ignored continuation can be hydrated by init. Shared files and configured add-ons remain unchanged.\"\n> — `.agents/skills/ctx/references/cli.md` (\"Creation, sharing, and hydration\")\n\nThe SKILL also frames it as \"hydrate missing team-local state through the CLI\" and notes \"Init generates prompts, not knowledge\" (`.agents/skills/ctx/SKILL.md`, \"Populate or extend facts\").\n\n## In a fresh clone of an existing team scaffold\n\n**What init can create:** only the *missing* ignored team-local state — i.e., the ignored `local/CONTINUE.md` continuation that does not survive a clone (team mode keeps `local/CONTINUE.md` ignored via the scaffold's `.gitignore`, so a fresh clone lacks it). Init's job here is to regenerate that missing local piece.\n\n**What it preserves (does not touch):**\n- Shared/durable files remain unchanged.\n- Configured/installed add-ons remain unchanged.\n- It does not reset contents, convert modes, or stage/commit.\n\n> \"Shared files and configured add-ons remain unchanged.\"\n> \"Init does not convert existing local/legacy scaffolds, reset their contents, or stage/commit files.\"\n> — `cli.md`\n\n**Can it change installed add-ons? No.** Hydration leaves configured add-ons as they are, and crucially:\n\n> \"An existing scaffold does not adopt newly introduced defaults through update or hydration.\"\n> — `cli.md` (\"Extend deliberately\")\n\nChanging the add-on set is a separate, deliberate operation — `ctx add` (which installs a *missing* selected document set and refuses existing outputs). Add-ons are not altered by init/hydration.\n\n## Important refusal boundaries\n\nFrom `cli.md` (\"Creation, sharing, and hydration\") and related sections — init **refuses** when:\n- **Existing continuation** is present (nothing to hydrate).\n- The scaffold is **incomplete** (not a valid existing team scaffold).\n- There is a **mode conflict** (e.g., the existing scaffold's mode conflicts with what's requested).\n\nAnd init will **not**:\n- Convert existing local or legacy scaffolds, or convert sharing mode.\n- Reset/overwrite existing contents, or replace an existing scaffold \"to make initialization succeed\" (`SKILL.md`).\n- Stage or commit files.\n- Delete context or change ignore rules to force success — instead it must \"Report a refusal\" (`cli.md`).\n\nSupporting boundaries elsewhere:\n- Config values (`mode`, `layoutVersion`, `templateRevision`, `project`, `addons`) must not be hand-edited \"to install capabilities or convert modes\" (`cli.md`).\n- Skill activation is not authorization: \"Skill activation is not authorization to initialize, update, change sharing mode, install add-ons, stage, commit, or publish\" (`SKILL.md`).\n- There is no layout-conversion command; init hydration uses the *saved* layout (`cli.md`, \"Existing flat scaffolds\").\n\n## Evidence limits\n\n- This is a **read-only documentation snapshot**, not a buildable checkout; no `ctx` CLI binary or source implementation is present to execute or inspect. All claims above describe the **documented contract** in the skill, not verified runtime behavior.\n- `.ctx/INDEX.md` is a layout-v2 router and `.ctx/local/CONTINUE.md` reports \"No work is in progress\"; neither adds or contradicts the hydration semantics.\n- I did not verify against the actual CLI's `--help` or a `config.json` (none applicable in this snapshot), which `cli.md` says should take precedence if they disagree with the reference.\n\n## Documents used\n\n- `<authorized repository>/AGENTS.md` — owner instructions (read-only scope)\n- `.agents/skills/ctx/SKILL.md` — hydration framing, refusal/authorization rules\n- `.agents/skills/ctx/references/cli.md` — primary source for hydration, init creation/preservation, add-on behavior, refusal boundaries\n- `.ctx/local/CONTINUE.md` and `.ctx/INDEX.md` — checked for in-progress work and routing (no conflicting evidence)",
+      "workspace": {
+        "entryCount": 46,
+        "beforeManifestSha256": "4349d89d251df21e7f52283503e881f7f86485d5eea4e60081b341cd6a05ec10",
+        "afterManifestSha256": "4349d89d251df21e7f52283503e881f7f86485d5eea4e60081b341cd6a05ec10",
+        "headBefore": "38db0b47e2d38b640bde25c9518484490c3c16a1",
+        "headAfter": "38db0b47e2d38b640bde25c9518484490c3c16a1",
+        "indexBefore": "933c070257a1fccad834b8bbfd73ed1de8226ab784a2c891862f94a2ff66c25e",
+        "indexAfter": "933c070257a1fccad834b8bbfd73ed1de8226ab784a2c891862f94a2ff66c25e",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    },
+    {
+      "task": "Cross-category compatibility and evidence question",
+      "layout": "Flat category documents",
+      "configuredProvider": "ollama",
+      "configuredModel": "glm-5.3:cloud",
+      "thinking": "No explicit override",
+      "runtimeReportedModels": [
+        "ollama/glm-5.3:cloud"
+      ],
+      "sourceCommit": "c0717d089514a3932dfb38fb2c4bffd6229d0f08",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWe have a flat layout-v2 team scaffold. A proposed plan is to run ctx update to get folder-first files and the latest default add-ons, then treat a verified category index as proof that every linked topic is accurate. Is that correct? Explain a safe in-place way to add contracts, what doctor and status can establish, and how index and topic readiness relate. Cite source.",
+      "runtime": {
+        "code": 0,
+        "signal": null,
+        "interrupted": null
+      },
+      "error": "Connection error.",
+      "elapsedMs": 14349,
+      "toolStarts": 0,
+      "completedToolResults": 0,
+      "toolOutputUtf8Bytes": 0,
+      "contextOutputUtf8Bytes": 0,
+      "calls": [],
+      "final": "",
+      "workspace": {
+        "entryCount": 46,
+        "beforeManifestSha256": "b06582592632a6083df57362fc6551042f40b8afcc5642a3cc4cf9a6d6aeb344",
+        "afterManifestSha256": "b06582592632a6083df57362fc6551042f40b8afcc5642a3cc4cf9a6d6aeb344",
+        "headBefore": "c0717d089514a3932dfb38fb2c4bffd6229d0f08",
+        "headAfter": "c0717d089514a3932dfb38fb2c4bffd6229d0f08",
+        "indexBefore": "bb6971ed5fb7c1661c4f29d318371c256c28e3aa7898a263e6ba9fd43bd8e9dd",
+        "indexAfter": "bb6971ed5fb7c1661c4f29d318371c256c28e3aa7898a263e6ba9fd43bd8e9dd",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    },
+    {
+      "task": "Cross-category compatibility and evidence question",
+      "layout": "Folder-first category indexes and topics",
+      "configuredProvider": "ollama",
+      "configuredModel": "glm-5.3:cloud",
+      "thinking": "No explicit override",
+      "runtimeReportedModels": [
+        "ollama/glm-5.3:cloud"
+      ],
+      "sourceCommit": "6372e5edd666235ad16e597d0825bad9ae471e21",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWe have a flat layout-v2 team scaffold. A proposed plan is to run ctx update to get folder-first files and the latest default add-ons, then treat a verified category index as proof that every linked topic is accurate. Is that correct? Explain a safe in-place way to add contracts, what doctor and status can establish, and how index and topic readiness relate. Cite source.",
+      "runtime": {
+        "code": 0,
+        "signal": null,
+        "interrupted": null
+      },
+      "error": "Connection error.",
+      "elapsedMs": 14304,
+      "toolStarts": 0,
+      "completedToolResults": 0,
+      "toolOutputUtf8Bytes": 0,
+      "contextOutputUtf8Bytes": 0,
+      "calls": [],
+      "final": "",
+      "workspace": {
+        "entryCount": 66,
+        "beforeManifestSha256": "bc912e59106b5a1d359b7a84b5bce95c33f1ba814d72db6793eb1fdbcf930e2f",
+        "afterManifestSha256": "bc912e59106b5a1d359b7a84b5bce95c33f1ba814d72db6793eb1fdbcf930e2f",
+        "headBefore": "6372e5edd666235ad16e597d0825bad9ae471e21",
+        "headAfter": "6372e5edd666235ad16e597d0825bad9ae471e21",
+        "indexBefore": "f7bc76818581d5307bea35e56dbc658f8d9e7b94df4a3f96e8862fc63861b74c",
+        "indexAfter": "f7bc76818581d5307bea35e56dbc658f8d9e7b94df4a3f96e8862fc63861b74c",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    },
+    {
+      "task": "Cross-category compatibility and evidence question",
+      "layout": "Folder-first category indexes and topics",
+      "configuredProvider": "anthropic",
+      "configuredModel": "claude-opus-4-8",
+      "thinking": "high",
+      "runtimeReportedModels": [
+        "anthropic/claude-opus-4-8"
+      ],
+      "sourceCommit": "d9d2bc60fd37a2893a7b58630a4128410c941742",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWe have a flat layout-v2 team scaffold. A proposed plan is to run ctx update to get folder-first files and the latest default add-ons, then treat a verified category index as proof that every linked topic is accurate. Is that correct? Explain a safe in-place way to add contracts, what doctor and status can establish, and how index and topic readiness relate. Cite source.",
+      "runtime": {
+        "code": 143,
+        "signal": null,
+        "interrupted": "twenty-four tool-call limit"
+      },
+      "error": null,
+      "elapsedMs": 58588,
+      "toolStarts": 26,
+      "completedToolResults": 24,
+      "toolOutputUtf8Bytes": 69899,
+      "contextOutputUtf8Bytes": 6200,
+      "calls": [
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./AGENTS.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 409,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/SKILL.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 9258,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/local/CONTINUE.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 97,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/INDEX.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 567,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx"
+          },
+          "returnedUtf8Bytes": 57,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references/cli.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 4890,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/config.json",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 181,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx/context"
+          },
+          "returnedUtf8Bytes": 52,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references/evidence-review.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 8263,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx/context/architecture"
+          },
+          "returnedUtf8Bytes": 66,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx/context/behavior"
+          },
+          "returnedUtf8Bytes": 64,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx/context/overview"
+          },
+          "returnedUtf8Bytes": 19,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx/context/caveats"
+          },
+          "returnedUtf8Bytes": 37,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx/context/glossary"
+          },
+          "returnedUtf8Bytes": 63,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/architecture/index.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 835,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/architecture/managed-updates.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 981,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/architecture/readiness.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 1074,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/architecture/catalog.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 1001,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/behavior/addons.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 1106,
+          "isError": false
+        },
+        {
+          "tool": "find",
+          "arguments": {
+            "pattern": "pkg/ctx/*.go",
+            "path": "."
+          },
+          "returnedUtf8Bytes": 165,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./pkg/ctx/add.go",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 19109,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./pkg/ctx/update.go",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 18957,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./pkg/ctx/status.go",
+            "offset": 1,
+            "limit": 90
+          },
+          "returnedUtf8Bytes": 2583,
+          "isError": false
+        },
+        {
+          "tool": "grep",
+          "arguments": {
+            "pattern": "func Doctor",
+            "path": "./pkg/ctx/doctor.go"
+          },
+          "returnedUtf8Bytes": 65,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./pkg/ctx/status.go",
+            "offset": 91,
+            "limit": 70
+          },
+          "returnedUtf8Bytes": null,
+          "isError": null
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./pkg/ctx/doctor.go",
+            "offset": 29,
+            "limit": 80
+          },
+          "returnedUtf8Bytes": null,
+          "isError": null
+        }
+      ],
+      "final": "",
+      "workspace": {
+        "entryCount": 66,
+        "beforeManifestSha256": "70d7e8f014273ea3d9b17ca1089fc28b4de3eca09e91123051aaeb9ba0fc2279",
+        "afterManifestSha256": "70d7e8f014273ea3d9b17ca1089fc28b4de3eca09e91123051aaeb9ba0fc2279",
+        "headBefore": "d9d2bc60fd37a2893a7b58630a4128410c941742",
+        "headAfter": "d9d2bc60fd37a2893a7b58630a4128410c941742",
+        "indexBefore": "f481b154aeeefe7b1f4c79ce1c8666773cb8aa9e89745879b60693bf16631e9f",
+        "indexAfter": "f481b154aeeefe7b1f4c79ce1c8666773cb8aa9e89745879b60693bf16631e9f",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    },
+    {
+      "task": "Cross-category compatibility and evidence question",
+      "layout": "Flat category documents",
+      "configuredProvider": "anthropic",
+      "configuredModel": "claude-opus-4-8",
+      "thinking": "high",
+      "runtimeReportedModels": [
+        "anthropic/claude-opus-4-8"
+      ],
+      "sourceCommit": "284fe170cb75274171e062b6ae8f903694986fe6",
+      "prompt": "Work only in <authorized repository>. Read AGENTS.md and use the installed ctx skill at .agents/skills/ctx/SKILL.md. Start from existing .ctx/local/CONTINUE.md and .ctx/INDEX.md, load relevant context, and check current source for material claims. This is read-only: do not modify files, stage, commit, install, publish, delegate, or inspect parents or other repositories. You have read, grep, find, and ls tools only. Answer the question with source paths, evidence limits, and a concise list of documents used; do not create an audit file.\n\nWe have a flat layout-v2 team scaffold. A proposed plan is to run ctx update to get folder-first files and the latest default add-ons, then treat a verified category index as proof that every linked topic is accurate. Is that correct? Explain a safe in-place way to add contracts, what doctor and status can establish, and how index and topic readiness relate. Cite source.",
+      "runtime": {
+        "code": 0,
+        "signal": null,
+        "interrupted": null
+      },
+      "error": null,
+      "elapsedMs": 80567,
+      "toolStarts": 19,
+      "completedToolResults": 19,
+      "toolOutputUtf8Bytes": 69728,
+      "contextOutputUtf8Bytes": 10747,
+      "calls": [
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./AGENTS.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 409,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/SKILL.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 9258,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/local/CONTINUE.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 97,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/INDEX.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 537,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx"
+          },
+          "returnedUtf8Bytes": 57,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./.ctx/context"
+          },
+          "returnedUtf8Bytes": 62,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references/cli.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 4890,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.agents/skills/ctx/references/evidence-review.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 8263,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/config.json",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 181,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/architecture.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 3769,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "."
+          },
+          "returnedUtf8Bytes": 53,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/caveats.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 1955,
+          "isError": false
+        },
+        {
+          "tool": "ls",
+          "arguments": {
+            "path": "./pkg/ctx"
+          },
+          "returnedUtf8Bytes": 103,
+          "isError": false
+        },
+        {
+          "tool": "read",
+          "arguments": {
+            "path": "./.ctx/context/behavior.md",
+            "offset": null,
+            "limit": null
+          },
+          "returnedUtf8Bytes": 4089,
+          "isError": false
+        },
+        {
+          "tool": "grep",
+          "arguments": {
+            "pattern": "index|topic|readiness|verified|Walk|recursi",
+            "path": "./pkg/ctx/status.go",
+            "ignoreCase": true,
+            "context": 2
+          },
+          "returnedUtf8Bytes": 11594,
+          "isError": false
+        },
+        {
+          "tool": "grep",
+          "arguments": {
+            "pattern": "addon|default|layout|templateRevision|ManagedDocuments",
+            "path": "./pkg/ctx/update.go",
+            "ignoreCase": true,
+            "context": 2
+          },
+          "returnedUtf8Bytes": 7251,
+          "isError": false
+        },
+        {
+          "tool": "grep",
+          "arguments": {
+            "pattern": "contracts|addon|layout|revision|already installed|existing",
+            "path": "./pkg/ctx/add.go",
+            "ignoreCase": true,
+            "context": 1
+          },
+          "returnedUtf8Bytes": 12835,
+          "isError": false
+        },
+        {
+          "tool": "grep",
+          "arguments": {
+            "pattern": "contracts",
+            "path": "./pkg/ctx/catalog.go",
+            "ignoreCase": true,
+            "context": 2
+          },
+          "returnedUtf8Bytes": 1727,
+          "isError": false
+        },
+        {
+          "tool": "grep",
+          "arguments": {
+            "pattern": "func Doctor|validate|visibility|marker|privacy|required",
+            "path": "./pkg/ctx/doctor.go",
+            "ignoreCase": true,
+            "context": 0
+          },
+          "returnedUtf8Bytes": 2598,
+          "isError": false
+        }
+      ],
+      "final": "## Answer\n\n**No, the plan is wrong on all three points.**\n\n### 1. `ctx update` does not produce folder-first files here\nThis scaffold is layout v2 (`.ctx/config.json`: `\"layoutVersion\": 2`, `\"templateRevision\": \"2.0.1\"`, flat `context/<category>.md`). Update operates on the *persisted* layout and add-on set — it does not convert v2 to the folder-first v3 (`context/<category>/index.md`) form:\n- `update.go:58` selects `LayoutForVersion(state.layoutVersion())`; `update.go:71` builds `ManagedDocuments(layout.Version, state.Config.Addons)`; `update.go:180` only advances `templateRevision` within the saved layout.\n- There is **no conversion command**; moving old facts or hand-editing `layoutVersion` is explicitly disallowed (references/cli.md \"Existing flat scaffolds\"; `behavior.md` \"No supported layout-conversion command is included\").\n\n### 2. `ctx update` does not install the latest default add-ons\nAn existing scaffold does not adopt newly-introduced defaults through update or hydration. Update refreshes only the managed documents for the *already-configured* add-ons (`state.Config.Addons`), and fact documents aren't managed outputs at all (`update.go`; `architecture.md` \"Managed updates\"; references/cli.md \"Extend deliberately\"). To add a concern you must use `ctx add`.\n\n### 3. A verified index is not proof that linked topics are accurate\nVerification is document-scoped. \"Verification of a category index certifies only that document's own claims, not every linked topic\" (`caveats.md`). Status walks and checks **every** nested Markdown file independently — a ready index neither skips nor confers readiness on its children: `status.go:136` (`WalkDir` no-follow discovery) and `architecture.md` \"A ready index does not cause a child to be skipped or inherit readiness.\" Readiness is also only evidence-checking at a commit, not human approval or semantic truth.\n\n### Safe in-place way to add contracts\nUse `ctx add` on the existing v2 scaffold rather than reinitializing or converting:\n\n```\nctx add /private/tmp/.../workspace-08 contracts --folder .ctx\n```\n\n- On layout v2 this creates the flat path **`context/contracts.md`** (catalog entry `catalog.go:89`; `behavior.md` \"Contracts is context/contracts.md on layout v2\"). It refuses to overwrite existing outputs, refreshes only the managed INDEX routing block, and updates config in a rollback-capable transaction (`add.go:18-21`, `:135-136`, `:199`).\n- The new fact is **draft** and must be authored from source; add does not populate it (`behavior.md` \"Add-on installation\"; references/cli.md \"Extend deliberately\").\n- It requires a compatible template revision: if the installed revision is older than the CLI's, run `ctx update` first (`add.go:73-77`). It does **not** convert the layout.\n\n(As a read-only snapshot I am not running these commands; this describes the authorized procedure.)\n\n### What doctor and status establish\n- **`ctx doctor`** — structure only: required files/config, template compatibility, managed-marker grammar/identity, and effective Git visibility/privacy boundaries (`doctor.go:26-29`, `:118-119`, `:158-186`; references/cli.md).\n- **`ctx status`** — readiness only: each fact's metadata (one `draft`/`verified`/`not-applicable` line), verified listed-source freshness against the immutable commit and current worktree/index, with word-count issues as non-failing warnings (`status.go:136`, `:219-226`, `:270-298`; `architecture.md` \"Content readiness discovery\").\n- **Neither reviews the truth or sufficiency of the prose** (`caveats.md`; references/cli.md \"Check structure and readiness separately\"). A material accuracy claim needs the bounded evidence review against source/tests/owner decisions.\n\n### How index and topic readiness relate\nEvery layout-v2 fact document — index and topic alike — carries exactly one metadata line and is checked on its own. Status recursively checks all of them; overall readiness is false if any one is not ready. A verified/ready index says nothing about whether its linked topics are accurate or even verified — inspect each relevant topic's own metadata and evidence (`architecture.md`; `caveats.md`; references/cli.md \"The readiness of an index says nothing about its linked topics\").\n\n## Evidence limits\n- Read-only snapshot; I did not run `ctx`, Git, or any command, and did not inspect anything outside this workspace.\n- The five `context/*.md` facts are stamped `verified` at commit `284fe170…` (2026-10-25). I confirmed their material claims against the current `pkg/ctx/*.go` source, but I could not run Git to confirm that stamped commit matches the working tree; treat the commit/worktree correspondence as unverified.\n- Source inspection was scoped to the claims in this question (update/add/doctor/status, contracts catalog, index-vs-topic readiness), not every sentence in the facts.\n\n## Documents used\n- `AGENTS.md` (owner instructions)\n- `.agents/skills/ctx/SKILL.md`\n- `.agents/skills/ctx/references/cli.md`\n- `.agents/skills/ctx/references/evidence-review.md`\n- `.ctx/INDEX.md`, `.ctx/config.json`, `.ctx/local/CONTINUE.md`\n- `.ctx/context/architecture.md`, `.ctx/context/behavior.md`, `.ctx/context/caveats.md`\n- Source: `pkg/ctx/update.go`, `pkg/ctx/add.go`, `pkg/ctx/catalog.go`, `pkg/ctx/doctor.go`, `pkg/ctx/status.go`",
+      "workspace": {
+        "entryCount": 46,
+        "beforeManifestSha256": "486d0fabcea78faf8a34d49d97cca4466f5a410cac35914f3a2f99c65c301785",
+        "afterManifestSha256": "486d0fabcea78faf8a34d49d97cca4466f5a410cac35914f3a2f99c65c301785",
+        "headBefore": "284fe170cb75274171e062b6ae8f903694986fe6",
+        "headAfter": "284fe170cb75274171e062b6ae8f903694986fe6",
+        "indexBefore": "68a4695bbb260e5ff74f84a34e9e493fea20f42111f4082963aef51b4b8d8117",
+        "indexAfter": "68a4695bbb260e5ff74f84a34e9e493fea20f42111f4082963aef51b4b8d8117",
+        "stagedDiffBefore": "",
+        "stagedDiffAfter": "",
+        "unchanged": true
+      }
+    }
+  ]
+}

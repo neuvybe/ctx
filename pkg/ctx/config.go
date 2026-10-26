@@ -138,7 +138,7 @@ func parseConfig(data []byte) (Config, error) {
 		if err := decodeStrictJSON(data, &persisted); err != nil {
 			return Config{}, err
 		}
-		if persisted.LayoutVersion != CurrentLayoutVersion {
+		if persisted.LayoutVersion != FlatLayoutVersion && persisted.LayoutVersion != CurrentLayoutVersion {
 			return Config{}, fmt.Errorf("unsupported layoutVersion %d for schemaVersion %d", persisted.LayoutVersion, persisted.SchemaVersion)
 		}
 		if strings.TrimSpace(persisted.TemplateRevision) == "" {
@@ -173,7 +173,7 @@ func marshalConfig(cfg Config) ([]byte, error) {
 			Mode          Mode `json:"mode"`
 		}{SchemaVersion: 1, Mode: cfg.Mode}
 	case currentSchemaVersion:
-		if cfg.LayoutVersion != CurrentLayoutVersion {
+		if cfg.LayoutVersion != FlatLayoutVersion && cfg.LayoutVersion != CurrentLayoutVersion {
 			return nil, fmt.Errorf("unsupported layoutVersion %d for schemaVersion %d", cfg.LayoutVersion, cfg.SchemaVersion)
 		}
 		if strings.TrimSpace(cfg.TemplateRevision) == "" {

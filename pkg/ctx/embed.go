@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"strings"
 )
 
 //go:embed all:template
@@ -31,25 +32,40 @@ func TemplateFS() fs.FS {
 }
 
 // TemplateFSForLayout returns the core template tree for a supported layout.
-// Optional v2 add-ons are exposed separately through AddonTemplateFS.
+// Optional add-ons are exposed separately through AddonTemplateFSForLayout.
 func TemplateFSForLayout(layoutVersion int) (fs.FS, error) {
 	root := ""
 	switch layoutVersion {
 	case LegacyLayoutVersion:
 		root = "v1"
-	case CurrentLayoutVersion:
+	case FlatLayoutVersion:
 		root = "v2"
+	case CurrentLayoutVersion:
+		root = "v3"
 	default:
 		return nil, fs.ErrInvalid
 	}
 	return fs.Sub(templateBundleFS(), root)
 }
 
-// AddonTemplateFS returns one optional add-on's template tree with its add-on
-// prefix stripped. The returned paths match the files installed by ctx add.
+// AddonTemplateFS preserves the original flat layout-v2 add-on template API.
+//
+// Deprecated: use AddonTemplateFSForLayout with an explicit layout version.
 func AddonTemplateFS(id string) (fs.FS, error) {
+	return AddonTemplateFSForLayout(FlatLayoutVersion, id)
+}
+
+// AddonTemplateFSForLayout returns the template tree for a layout's add-on.
+func AddonTemplateFSForLayout(layoutVersion int, id string) (fs.FS, error) {
+	if layoutVersion != FlatLayoutVersion && layoutVersion != CurrentLayoutVersion {
+		return nil, fmt.Errorf("layout v%d does not support add-ons", layoutVersion)
+	}
 	if _, ok := LookupAddon(id); !ok {
 		return nil, fmt.Errorf("unknown add-on %q", id)
+	}
+	addon, _ := lookupAddonForLayout(layoutVersion, id)
+	if layoutVersion == CurrentLayoutVersion && strings.HasPrefix(addon.Path, "context/") {
+		return fs.Sub(templateBundleFS(), "addons-v3/"+id)
 	}
 	return fs.Sub(templateBundleFS(), "addons/"+id)
 }

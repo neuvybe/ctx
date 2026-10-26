@@ -1,8 +1,9 @@
 # @neuvybe/ctx
 
 `ctx` gives coding agents durable, project-specific context that survives
-compaction. New scaffolds use layout v2: a small core of evidence-tracked project
-facts, a hierarchical index, and an ignored local continuation file. The
+compaction. New scaffolds use folder-first layout v3: category `index.md` files for
+evidence-tracked facts, focused topic files when useful, and an ignored local
+continuation file. The
 behavior and glossary add-ons are selected by default; other add-ons stay opt-in.
 
 Team mode is the default. Durable context is available to review and commit,
@@ -28,7 +29,7 @@ go install github.com/neuvybe/ctx/cmd/ctx@latest
 ## Initialize
 
 ```bash
-# Team-mode v2 core plus behavior and glossary
+# Team-mode v3 core plus behavior and glossary
 ctx init /path/to/repo
 
 # Core only
@@ -40,7 +41,7 @@ ctx init /path/to/repo --mode local
 # Add focused context at creation
 ctx init /path/to/repo --with operating,contracts
 
-# Inspect or extend an existing v2 scaffold
+# Inspect or extend a configured v2/v3 scaffold
 ctx add --list
 ctx add /path/to/repo review
 
@@ -56,9 +57,12 @@ but new scaffolds select both by default. `--with` and `--without` are repeatabl
 and comma-friendly. The other available add-ons are `operating`, `contracts`,
 `extending`, and `review`.
 
-For large projects, keep `context/behavior.md` concise and route deeper topics
-to `context/behavior/<topic>.md`. Each child carries its own readiness metadata.
-Existing scaffolds retain their selected add-ons until explicitly extended.
+ctx generates category indexes such as `context/behavior/index.md`, not preset
+topics. During initial population, give independently useful explanations
+sibling `<topic>.md` files and descriptive routes. Keep short related definitions
+together instead of forcing one file per term. Every index and topic has its
+own evidence metadata; index verification does not certify children. Existing scaffolds retain their selected add-ons until explicitly
+extended.
 
 For new initialization, `--folder` accepts one top-level name containing only
 letters, digits, `.`, `_`, or `-`. Repeat a custom `--folder` with later
@@ -75,12 +79,14 @@ hydrate only the ignored continuation file.
 - `ctx update` refreshes compatible named managed blocks without touching local
   continuation state.
 
-Existing schema-v1 and config-less legacy scaffolds stay on their frozen v1
+Existing v2 scaffolds keep flat `context/<category>.md` parents and their saved
+add-on/update catalog. No command silently converts them to v3. Existing
+schema-v1 and config-less legacy scaffolds stay on their frozen v1
 layout/update path; ctx does not silently relocate their root `CONTINUE.md`,
 change unnamed markers, or expose private context.
 
 See the [project README](https://github.com/neuvybe/ctx#readme),
-[layout v2 guide](https://github.com/neuvybe/ctx/blob/main/docs/layout-v2.md),
+[folder-first layout guide](https://github.com/neuvybe/ctx/blob/main/docs/layout-v3.md),
 [fill workflow](https://github.com/neuvybe/ctx/blob/main/docs/fill-context-workflow.md),
 [team-mode migration](https://github.com/neuvybe/ctx/blob/main/docs/migrations/0.2-team-mode.md),
 and [layout-v2 migration](https://github.com/neuvybe/ctx/blob/main/docs/migrations/0.3-layout-v2.md).

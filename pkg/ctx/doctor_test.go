@@ -93,7 +93,9 @@ func TestDoctorUnbalancedMarkers(t *testing.T) {
 func TestDoctorMissingExpectedFile(t *testing.T) {
 	repo := mkRepo(t)
 	InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: ModeTeam})
-	os.Remove(filepath.Join(repo, ".ctx", "context", "caveats.md"))
+	if err := os.Remove(filepath.Join(repo, ".ctx", "context", "caveats", "index.md")); err != nil {
+		t.Fatal(err)
+	}
 	checks, _ := Doctor(repo, ".ctx")
 	if !anyFailed(checks) {
 		t.Errorf("expected failure for missing expected file")

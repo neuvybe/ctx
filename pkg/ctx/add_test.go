@@ -459,7 +459,7 @@ func TestAddLocalModeKeepsNewOutputPrivate(t *testing.T) {
 func addTestV2Repo(t *testing.T, mode Mode) string {
 	t.Helper()
 	repo := modeTestGitRepo(t)
-	if err := InitWithOptions(repo, InitOptions{Folder: ".ctx", Mode: mode, Addons: []string{}}); err != nil {
+	if err := initFlatWithOptionsForTest(t, repo, InitOptions{Folder: ".ctx", Mode: mode, Addons: []string{}}); err != nil {
 		t.Fatalf("InitWithOptions: %v", err)
 	}
 	return repo
