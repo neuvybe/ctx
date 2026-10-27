@@ -1,5 +1,10 @@
 # ctx skill forward-testing protocol
 
+The [guarded authoring runner](guarded-authoring.md) adds model-free preparation,
+virtual context proposals, deterministic boundary tests, native Codex qualification,
+and read-only Pi credential isolation for future independent repository trials.
+Local preflight is separate from provider-access validation and launch approval.
+
 The [flat-versus-folder retrieval protocol](retrieval-comparison.md) and
 [recorded results](retrieval-comparison-results.md) cover the new layout.
 Three of eight sessions returned final answers; the results do not establish
