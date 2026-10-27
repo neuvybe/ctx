@@ -1,6 +1,7 @@
 # Guarded authoring runtime qualification
 
-Local qualification on October 27, 2026. This is a runtime/configuration check,
+Local qualification on October 27, 2026. Historical checks below are preserved;
+the follow-up section records the newer qualification. This is a runtime/configuration check,
 not a model evaluation, provider-access guarantee, or approval to incur usage.
 
 ## Runtime boundary checks
@@ -63,5 +64,45 @@ validity window covering the approved trial plus five minutes. Freeze the source
 commit, input/skill/harness hashes, transport selections, thinking settings, and
 agreed resource/spending limits. Explicitly approve provider execution separately.
 Retain real access failures, timeouts, and incomplete attempts without semantic
-retries or model substitution. All three selected models remain unevaluated by
-this guarded runner at this checkpoint.
+retries or model substitution. At that initial checkpoint, all three selected
+models remained unevaluated by this guarded runner.
+
+## Follow-up after the first private pilot
+
+The first pilot is retained separately, not overwritten or reclassified as a
+successful cross-model comparison. It exposed two harness defects: an
+authentication source module was mistaken for a credential file, and sparse
+custom Pi metadata passed startup despite missing output-limit/cost fields.
+The latter was reproduced offline as a nonfinite token limit and an accounting
+exception; that does not prove it was the sole cause of the sanitized live error.
+
+The broker now retains authentication source filenames, keeps secret-file and
+sensitive-ancestor exclusions, and explicitly describes its inventory as a
+filtered available view. Environment examples remain withheld. Pi refuses
+incomplete/invalid request and accounting metadata before inference. A real Pi
+SDK loopback test checks the emitted output limit and reasoning setting, then
+processes scripted usage successfully. No actual provider is used by that test.
+
+The user upgraded Codex CLI from 0.154.0 to 0.164.0. A source-free authenticated
+catalog inspection with the same existing ChatGPT login now advertises the exact
+`gpt-6.1-sol` identifier and `high`; the older client's catalog did not. No alias,
+other model, new credential, or billing route was selected. Catalog acceptance is
+not proof that inference will succeed. Native runs now gate thread creation on
+the exact advertised model and requested reasoning effort.
+
+The newer client's tool catalog changed to a code-mode wrapper. Installed-runtime
+tests were updated to exercise the actual nested guarded read, missing Node/
+filesystem/network globals, refused native patch writes, and native MCP-call
+quarantine with no peer canary exposure. The wrapper host is enabled because
+disabling it leaves advertised guarded tools unusable. Execution environments
+and workspace roots remain empty; shell, discovery, delegation, apps, and
+plugins remain disabled. See the runner contract for the exact runtime
+differences. The adapter now pins 0.164.0 rather than silently accepting upgrades.
+
+After these follow-up changes, the complete Node suite passed 46 tests with no
+failures or skips, including all four installed-runtime checks. Root Go vet and
+the full ctx race suite also passed. These checks used no real model inference.
+
+Reruns require a new private destination and a newly frozen contract. Preserve
+the original pilot, include all new failures, and keep application source,
+private proposals, and raw provider diagnostics out of the public tooling PR.

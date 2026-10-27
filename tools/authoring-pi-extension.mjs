@@ -14,7 +14,7 @@ export const descriptions = {
   ctx_list: "List this trial's frozen source and proposed context paths under a repository-relative path; use . for the root.",
   ctx_search: "Literal text search within this trial's frozen source and proposed context. No regex or shell syntax.",
   ctx_write: "Propose a complete context fact, INDEX, or local continuation. expectedHash must equal its latest read hash, or null for a new file. Cannot change config, mode, owner instructions, or source.",
-  ctx_source_info: "Return the pinned source commit and available source paths. Source is clean and immutable; no Git command is needed.",
+  ctx_source_info: "Return the pinned source commit, filtered available source paths, and omission counts. NOT a complete Git inventory: unavailable paths may be withheld, not absent from the repository. No Git command is needed.",
 };
 
 export function qualifiedThinking(requested, effective) {

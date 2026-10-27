@@ -4,11 +4,11 @@ import { chmod, lstat, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { codexConfig, codexThreadParams, dynamicTools, runCodex } from "./lib/authoring-codex.mjs";
+import { codexConfig, codexThreadParams, dynamicTools, qualifyCodexModel, runCodex } from "./lib/authoring-codex.mjs";
 import { coordinatorEnv } from "./lib/authoring-workspace.mjs";
 import { toolNames } from "./lib/authoring-boundary.mjs";
 import { readOnlyCredentialStore, selectedCodexAuth, selectedPiCredential } from "./lib/authoring-auth.mjs";
-import { createIsolatedPi, loadPi, selectedModelConfig } from "./authoring-pi-sdk.mjs";
+import { createIsolatedPi, loadPi, selectedModelConfig, validatePiModel } from "./authoring-pi-sdk.mjs";
 import { preflightFailure, preflightRuntime } from "./preflight-authoring-runtime.mjs";
 import { qualifiedThinking } from "./authoring-pi-extension.mjs";
 
@@ -106,6 +106,79 @@ test("local preflight failures expose fixed actionable categories rather than pr
   assert.equal(failure.inferenceRequested, false);
 });
 
+test("Pi request metadata rejects missing, nonfinite, negative, and inconsistent runtime fields before inference", () => {
+  const model = { name: "Fixture", api: "openai-completions", baseUrl: "http://127.0.0.1:11434/v1", reasoning: true, input: ["text"], contextWindow: 8192, maxTokens: 1024, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } };
+  assert.equal(validatePiModel(model), model);
+  for (const field of Object.keys(model)) {
+    const incomplete = { ...model }; delete incomplete[field];
+    assert.throws(() => validatePiModel(incomplete), /complete valid request/);
+  }
+  for (const change of [{ maxTokens: NaN }, { maxTokens: Infinity }, { contextWindow: 0 }, { maxTokens: -1 }, { maxTokens: 8193 }, { maxTokens: 1.5 }, { reasoning: "true" }, { input: [] }, { input: ["audio"] }, { cost: { ...model.cost, output: -1 } }, { cost: { ...model.cost, tiers: [{ ...model.cost, inputTokensAbove: NaN }] } }]) assert.throws(() => validatePiModel({ ...model, ...change }), /complete valid request/);
+  assert.equal(preflightFailure(new Error("Selected Pi model requires complete valid request limits, input, reasoning, and cost metadata")).reason, "selected-model-metadata-incomplete-or-invalid");
+});
+
+test("sparse custom Pi models are refused instead of inheriting unsafe extension-registration defaults", async t => {
+  const root = await temporary(t), path = join(root, "models.json");
+  await writeFile(path, JSON.stringify({ providers: { fixture: { api: "openai-completions", baseUrl: "https://example.invalid/v1", models: [{ id: "exact-model", name: "Fixture", input: ["text"], contextWindow: 8192 }] } } }));
+  await assert.rejects(selectedModelConfig(path, "fixture", "exact-model", { getModel: () => undefined }), /complete valid request/);
+});
+
+test("Codex model routing requires an exact advertised model and reasoning effort, never a display-name alias", () => {
+  const entries = [{ id: "picker-id", model: "exact-model", displayName: "Requested Display Name", supportedReasoningEfforts: [{ reasoningEffort: "high" }] }];
+  assert.deepEqual(qualifyCodexModel(entries, "exact-model", "high"), { exactModelAdvertised: true, requestedEffortAdvertised: true });
+  for (const model of ["picker-id", "Requested Display Name", "other-model"]) assert.throws(() => qualifyCodexModel(entries, model, "high"), /not advertised/);
+  assert.throws(() => qualifyCodexModel(entries, "exact-model", "max"), /not advertised/);
+});
+
+test("authenticated Codex rejects an unadvertised model before creating a thread or requesting inference", async t => {
+  const root = await temporary(t), executable = join(root, "scripted-catalog"), methods = join(root, "methods.jsonl");
+  await writeFile(executable, `#!${process.execPath}
+const {appendFileSync}=require('node:fs');
+require('node:readline').createInterface({input:process.stdin}).on('line',line=>{
+ const m=JSON.parse(line);appendFileSync(${JSON.stringify(methods)},JSON.stringify(m.method)+'\\n');if(!m.id)return;
+ const result=m.method==='skills/list'?{data:[]}:m.method==='model/list'?{data:[{model:'different-model'}],nextCursor:null}:{};
+ process.stdout.write(JSON.stringify({id:m.id,result})+'\\n');
+});`, { mode: 0o700 });
+  const result = await runCodex({ executable, cwd: root, env: coordinatorEnv(), input, model: "exact-requested-model", provider: "openai", thinking: "high", systemPrompt: "No inference.", prompt: "Must not be sent.", auth: { type: "chatgptAuthTokens", accessToken: "SYNTHETIC", chatgptAccountId: "SYNTHETIC" } });
+  assert.equal(result.runtime.incomplete, true);
+  assert.equal(result.runtime.interrupted, "model-route-not-qualified");
+  assert.equal(result.runtime.modelQualification.inferenceRequested, false);
+  assert.equal(/thread\/start|turn\/start/.test(await readFile(methods, "utf8")), false);
+});
+
+test("installed Pi constructs finite request limits and accounts for a scripted completion using a complete custom model", { skip: !process.env.CTX_TEST_PI }, async t => {
+  const root = await temporary(t), agentDir = join(root, "agent"), modelsFile = join(root, "models.json");
+  await mkdir(agentDir);
+  const previous = { input: process.env.CTX_AUTHORING_INPUT, result: process.env.CTX_AUTHORING_RESULT };
+  const inputPath = join(root, "input.json");
+  await writeFile(inputPath, JSON.stringify({ ...input, thinking: "high" }));
+  process.env.CTX_AUTHORING_INPUT = inputPath; process.env.CTX_AUTHORING_RESULT = join(root, "proposal.json");
+  t.after(() => { for (const [key, value] of [["CTX_AUTHORING_INPUT", previous.input], ["CTX_AUTHORING_RESULT", previous.result]]) if (value === undefined) delete process.env[key]; else process.env[key] = value; });
+  const requests = [];
+  const server = createServer(async (request, response) => {
+    let data = ""; for await (const chunk of request) data += chunk;
+    requests.push(JSON.parse(data));
+    response.writeHead(200, { "Content-Type": "text/event-stream" });
+    for (const chunk of [{ choices: [{ index: 0, delta: { role: "assistant", content: "READY" }, finish_reason: null }] }, { choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 12, completion_tokens: 2, total_tokens: 14 } }]) response.write("data: " + JSON.stringify({ id: "fixture", object: "chat.completion.chunk", model: "glm-fixture:cloud", ...chunk }) + "\n\n");
+    response.end("data: [DONE]\n\n");
+  });
+  await new Promise((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  await writeFile(modelsFile, JSON.stringify({ providers: { ollama: { api: "openai-completions", baseUrl: "http://127.0.0.1:" + server.address().port + "/v1", apiKey: "ollama", models: [{ id: "glm-fixture:cloud", name: "Scripted fixture", reasoning: true, input: ["text"], contextWindow: 32768, maxTokens: 1024, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, compat: { supportsReasoningEffort: true } }] } } }));
+  const pi = await loadPi(process.env.CTX_TEST_PI);
+  const session = await createIsolatedPi({ pi, cwd: root, agentDir, provider: "ollama", model: "glm-fixture:cloud", thinking: "high", credential: { type: "api_key", key: "ollama" }, systemPrompt: "Scripted test only.", modelsFile, localDaemon: true });
+  const messages = [];
+  try { session.subscribe(event => { if (event.type === "message_end" && event.message?.role === "assistant") messages.push(event.message); }); await session.prompt("Reply READY. No tools."); }
+  finally { session.dispose(); }
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].model, "glm-fixture:cloud");
+  assert.equal(requests[0].reasoning_effort, "high");
+  assert.equal(requests[0].max_tokens ?? requests[0].max_completion_tokens, 1024);
+  assert.equal(messages.at(-1)?.stopReason, "stop");
+  assert.equal(messages.at(-1)?.usage.totalTokens, 14);
+  assert.equal(Number.isFinite(messages.at(-1)?.usage.cost.total), true);
+});
+
 test("installed Pi SDK starts with an in-memory session and the same guarded tools without inference", { skip: !process.env.CTX_TEST_PI }, async t => {
   const root = await temporary(t), agentDir = join(root, "agent"), inputPath = join(root, "input.json"), proposalPath = join(root, "proposal.json");
   await mkdir(agentDir);
@@ -193,8 +266,10 @@ test("installed native Codex confines authoring tools and refuses scripted bound
   const marker = join(root, "must-not-write");
   const calls = [
     { name: "ctx_list", arguments: { path: "." } },
-    { namespace: "skills", name: "list", arguments: { authority: { kind: "orchestrator" } } },
-    { namespace: "skills", name: "read", arguments: { package: secretRoot } },
+    { type: "custom_tool_call", namespace: "functions", name: "exec", input: 'text(await tools.ctx_read({path:"source.txt"}));' },
+    { type: "custom_tool_call", namespace: "functions", name: "exec", input: 'text({process:typeof process,require:typeof require,fetch:typeof fetch});' },
+    { type: "custom_tool_call", namespace: "functions", name: "exec", input: 'await import("node:fs");' },
+    { type: "custom_tool_call", namespace: "functions", name: "exec", input: 'text(await tools.apply_patch(' + JSON.stringify("*** Begin Patch\n*** Add File: " + marker + "\n+unauthorized\n*** End Patch") + '));' },
     { name: "exec_command", arguments: { cmd: "touch " + marker } },
     { name: "spawn_agent", arguments: { message: "This must be refused" } },
   ];
@@ -217,15 +292,31 @@ test("installed native Codex confines authoring tools and refuses scripted bound
   assert.equal(result.runtime.incomplete, false, JSON.stringify(result.runtime));
   assert.equal(result.final, "Deterministic fixture completed.");
   assert.equal(result.proposal.events[0]?.tool, "ctx_list");
-  const names = requests[0].tools.flatMap(tool => tool.type === "namespace" ? tool.tools.map(child => tool.name + "." + child.name) : [tool.name || tool.type]);
-  assert.deepEqual(names.sort(), [...toolNames, "skills.list", "skills.read", "request_user_input"].sort(), "Unexpected native capability declaration");
+  const declared = requests[0].tools || requests[0].input.filter(item => item.type === "additional_tools").flatMap(item => item.tools);
+  const names = declared.flatMap(tool => tool.type === "namespace" ? tool.tools.map(child => tool.name + "." + child.name) : [tool.name || tool.type]);
+  assert.deepEqual(names.sort(), ["functions.exec", "functions.wait", "functions.request_user_input", "functions.request_user_input_async"].sort(), "Unexpected native capability declaration");
+  const nestedDescription = declared.find(tool => tool.name === "functions").tools.find(tool => tool.name === "exec").description;
+  const nestedNames = [...nestedDescription.matchAll(/declare const tools: \{ ([A-Za-z0-9_]+)/g)].map(match => match[1]);
+  assert.deepEqual(nestedNames.sort(), [...toolNames, "apply_patch", "list_mcp_resource_templates", "list_mcp_resources", "read_mcp_resource", "clock__curr_time"].sort());
   assert.equal(requests.length, calls.length + 1);
-  const outputs = requests.flatMap(body => (body.input || []).filter(item => item.type === "function_call_output"));
-  const listing = outputs.find(item => item.call_id === "fixture-call-2");
-  assert.ok(listing, "The native skill-list call must actually execute");
-  assert.equal(/unknown tool|tool.*not found/i.test(JSON.stringify(listing.output)), false, "Do not mistake an invalid fixture call for a native skill-read boundary check: " + JSON.stringify(listing.output));
+  const outputs = requests.flatMap(body => (body.input || []).filter(item => ["function_call_output", "custom_tool_call_output"].includes(item.type)));
+  const nestedRead = outputs.find(item => item.call_id === "fixture-call-2");
+  assert.ok(nestedRead, "The native code-mode guarded read must actually execute");
+  assert.match(JSON.stringify(nestedRead.output), /No provider secrets/);
+  const globals = outputs.find(item => item.call_id === "fixture-call-3");
+  for (const name of ["process", "require", "fetch"]) assert.match(JSON.stringify(globals.output), new RegExp(name + '.{0,12}undefined'));
+  assert.match(JSON.stringify(outputs.find(item => item.call_id === "fixture-call-4").output), /(?:not supported|not allowed|disabled|cannot|error)/i);
+  assert.match(JSON.stringify(outputs.find(item => item.call_id === "fixture-call-5").output), /(?:environment|not allowed|disabled|cannot|error)/i);
   assert.equal(JSON.stringify(requests).includes("PEER-SKILL-SECRET-CANARY"), false);
   await assert.rejects(lstat(marker), { code: "ENOENT" });
   assert.equal(JSON.stringify(requests).includes("OPENAI_API_KEY"), false);
   assert.equal(await readFile(join(home, "config.toml"), "utf8"), config);
+  // Native MCP bookkeeping is not an authoring capability. Even with no
+  // configured server, an attempted native MCP item quarantines the run.
+  calls.splice(0, calls.length, { type: "custom_tool_call", namespace: "functions", name: "exec", input: 'text(await tools.read_mcp_resource({server:"peer",uri:' + JSON.stringify(secretRoot + "/SKILL.md") + '}));' });
+  requests.length = 0;
+  const denied = await runCodex({ executable: process.env.CTX_TEST_CODEX, cwd, env: { ...coordinatorEnv(), CODEX_HOME: home }, input, model: "gpt-6.1-sol", provider: "ctx-fixture", thinking: "low", systemPrompt: "Scripted boundary check.", prompt: "No real inference." });
+  assert.equal(denied.runtime.incomplete, true);
+  assert.equal(denied.runtime.interrupted, "unexpected-native-tool");
+  assert.equal(JSON.stringify(requests).includes("PEER-SKILL-SECRET-CANARY"), false);
 });

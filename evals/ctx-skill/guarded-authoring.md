@@ -25,7 +25,7 @@ experiment**. Before provider calls:
   separately billed API-key substitute. Pi SDK reuses a single selected stored
   credential through a read-only store. No credential file is copied.
 - Run the optional installed-runtime qualification tests against the actual
-  approved executables. Current pins are Pi 1.1.0 and Codex CLI 0.154.0. Other
+  approved executables. Current pins are Pi 1.1.0 and Codex CLI 0.164.0. Other
   versions are refused, not upgraded.
 - Confirm the explicit Pi transport in the trial plan. `pi-sdk` uses
   the Pi engine/guard with read-only existing credentials. `pi` is accepted for
@@ -51,6 +51,12 @@ Ignored and untracked files are unavailable to tools. Symlinks, submodules,
 binary/large files, common secret filenames, and runtime/auth directories are
 omitted. The selected ctx skill is overlaid without changing owner instructions.
 A conflicting installed ctx skill is refused rather than silently replaced.
+Source filenames such as `auth.ts` are retained; credential files such as
+`auth.json` and sensitive ancestors remain excluded. Environment examples are
+still withheld: an example suffix is not proof that contents contain no secrets.
+`ctx_source_info` names the list `availableSourcePaths`, explicitly marks it
+incomplete, and reports omission counts by reason without sensitive filenames.
+It is never evidence that an unavailable path is absent from the repository.
 
 The coordinator initializes a genuine team scaffold in a private verification
 repository. The author sees this scaffold and source through an immutable
@@ -93,6 +99,13 @@ reasoning across runtimes. Local engine settings do not prove what a remote
 provider actually applies. Supervisor timeouts, malformed events, stream limits,
 and abnormal process failures remain incomplete even if a final message and
 completion arrive during termination grace.
+Pi extension registration does not apply the CLI JSON loader's model defaults.
+Custom profiles must explicitly provide valid context/output limits, reasoning,
+input types, and cost rates; sparse or invalid metadata is refused before
+inference, not guessed. Native catalog models are also validated after selection.
+Use a separate reviewed trial profile instead of editing a user's registry.
+Zero cost metadata can be an SDK accounting placeholder, not evidence that
+inference is free. The runner reports token usage, not a pricing estimate.
 
 The Pi/Codex runtimes, extension, coordinator, selected CLI binaries, operating system,
 and Git are trusted software. This is a model-tool capability boundary, **not an
@@ -107,13 +120,23 @@ commands. Unexpected registered tools block startup and all tool execution.
 Native Codex uses fresh process-local state, an in-memory thread, no environment
 or workspace capability roots, disabled command/image/browser/app/plugin/memory/
 delegation features, and the same five tools supplied as client-handled dynamic
-tools. It still declares native `skills.list`, `skills.read`, and
-`request_user_input` bookkeeping. Native skill discovery is disabled and its
-inventory must be empty before starting a thread. Tests explicitly probe peer
-skill reads and unadvertised command/delegation calls; none reaches host files.
+tools. Codex 0.164.0 advertises these through its isolated JavaScript code-mode
+wrapper, even with the optional code-mode feature disabled. The wrapper host
+must be enabled for guarded nested calls to execute. It has no Node, filesystem,
+or network globals; this is runtime orchestration, not an added source tool.
+Its nested catalog also advertises native patch, MCP-resource, and clock helpers,
+plus user-input bookkeeping. With no execution environments, native patch writes
+are refused; no MCP servers are configured. An observed native MCP call
+quarantines the run. Tests exercise real nested guarded reads, disabled filesystem
+imports, missing process/network globals, refused patch writes, peer-resource
+reads, and unadvertised command/delegation calls. Native skill discovery is
+disabled and its inventory must be empty before starting a thread.
 User-input, permission, token-refresh, and other unexpected control requests are
 denied by the client and stop the trial. These known native declarations are
 recorded runtime differences, not equivalent extra authoring capabilities.
+Authenticated native runs check the entire paginated `model/list` catalog for
+the exact model and requested effort before creating a thread. A display name,
+picker identifier, or another model is not an automatic alias or fallback.
 
 Codex authentication uses experimental externally supplied ChatGPT access tokens
 with ephemeral credential storage. The coordinator supplies only the existing

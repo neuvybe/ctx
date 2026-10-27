@@ -39,6 +39,22 @@ test("canonical virtual paths reject traversal, absolute paths, Git internals, a
   assert.equal(safePath("context/scope.md"), "context/scope.md");
   assert.equal(safePath(".", { root: true }), ".");
   for (const path of [".env", "nested/.env.production", ".aws/config", ".claude/auth.json", ".npmrc", ".netrc", ".git-credentials", "cert.key", "auth.json", "secrets.txt", "nested/node_modules/x"]) assert.equal(sensitivePath(path), true, path);
+  for (const path of ["src/auth.ts", "src/auth.test.ts", "src/credentials.py", "src/secrets.go"]) assert.equal(sensitivePath(path), false, path);
+  for (const path of [".env.example", ".claude/auth.ts", "secrets/config.ts", "auth.json/module.ts", "auth.ts/credentials.json"]) assert.equal(sensitivePath(path), true, path);
+});
+
+test("source information describes a filtered view without exposing withheld filenames or claiming repository absence", () => {
+  const counts = { "sensitive-path": 4, "binary-file": 1 };
+  const boundary = createBoundary(input({ sourceOmissions: counts }));
+  counts["sensitive-path"] = 99;
+  const info = JSON.parse(boundary.execute("ctx_source_info", {}));
+  assert.equal(info.inventoryComplete, false);
+  assert.equal(Object.hasOwn(info, "trackedSourcePaths"), false);
+  assert.ok(info.availableSourcePaths.includes("src/app.ts"));
+  assert.deepEqual(info.omittedFileCounts, { "sensitive-path": 4, "binary-file": 1 });
+  assert.match(info.limitation, /not evidence.*absent/);
+  assert.equal(JSON.parse(createBoundary(input()).execute("ctx_source_info", {})).omittedFileCounts, null);
+  assert.throws(() => createBoundary(input({ sourceOmissions: { "SECRET-FILENAME": 1 } })));
 });
 
 test("tool allowlist denies commands, publication, delegation, peers, and unknown arguments without recording their payload", () => {
@@ -118,14 +134,17 @@ test("coordinator independently rejects forged proposal paths, unsupported add-o
 test("frozen Git sources omit secrets, symlinks, and ignored files, and reject dirty or wrong-commit inputs", async t => {
   const { root, repo } = await fixture(t);
   await writeFile(join(repo, ".env"), "TRACKED-SECRET-MARKER");
+  await writeFile(join(repo, "auth.ts"), "export const requireAuthentication = true;\n");
+  await writeFile(join(repo, "auth.json"), "CREDENTIAL-SECRET-MARKER");
+  await writeFile(join(repo, ".env.example"), "EXAMPLE-STILL-REQUIRES-REVIEW-SECRET-MARKER");
   await writeFile(join(repo, "ignored.txt"), "IGNORED-SECRET-MARKER");
   await symlink(join(root, "outside-secret"), join(repo, "external-link"));
   await writeFile(join(root, "outside-secret"), "OUTSIDE-SECRET-MARKER");
-  git(repo, "add", ".env", "external-link");
+  git(repo, "add", ".env", "auth.ts", "auth.json", ".env.example", "external-link");
   git(repo, "-c", "user.name=ctx-test", "-c", "user.email=ctx-test@example.invalid", "-c", "commit.gpgsign=false", "commit", "-qm", "record excluded input shapes");
   const commit = git(repo, "rev-parse", "HEAD").toString().trim();
   const source = await frozenSources(repo, commit);
-  assert.deepEqual(Object.keys(source.files).sort(), [".gitignore", "AGENTS.md", "app.txt"]);
+  assert.deepEqual(Object.keys(source.files).sort(), [".gitignore", "AGENTS.md", "app.txt", "auth.ts"]);
   assert.equal(JSON.stringify(source).includes("SECRET-MARKER"), false);
   assert.equal(source.omitted.some(entry => entry.reason === "link-or-submodule"), true);
   // A hard link in the worktree cannot turn a model read into a host-file read:

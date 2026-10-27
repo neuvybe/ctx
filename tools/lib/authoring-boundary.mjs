@@ -16,8 +16,13 @@ export function safePath(value, { root = false } = {}) {
 }
 
 export function sensitivePath(path) {
-  return path.split("/").some(part => /^(?:\.git|\.aws|\.ssh|\.codex|\.claude|\.pi|\.netrc|\.npmrc|\.pypirc|\.git-credentials|node_modules)$/i.test(part) ||
-    /^\.env(?:\.|$)/i.test(part) || /\.(?:pem|key|p12|pfx)$/i.test(part) || /^(?:auth|credentials|secrets?)(?:\.|$)/i.test(part));
+  const parts = path.split("/");
+  return parts.some((part, index) => /^(?:\.git|\.aws|\.ssh|\.codex|\.claude|\.pi|\.netrc|\.npmrc|\.pypirc|\.git-credentials|node_modules)$/i.test(part) ||
+    /^\.env(?:\.|$)/i.test(part) || /\.(?:pem|key|p12|pfx)$/i.test(part) ||
+    // Authentication modules are evidence, not credential stores. Limit the
+    // exception to source filenames; auth.json and sensitive ancestors stay out.
+    (/^(?:auth|credentials|secrets?)(?:\.|$)/i.test(part) &&
+      !(index === parts.length - 1 && /\.(?:[cm]?[jt]sx?|go|py|rs|java|kt|rb|c|cc|cpp|h|hpp|cs|swift)$/i.test(part))));
 }
 
 export function mayWrite(path) {
@@ -29,9 +34,12 @@ function keys(input, allowed, required = allowed) {
       required.some(key => !Object.hasOwn(input, key))) throw new Error("Invalid tool arguments");
 }
 
-export function createBoundary({ files, sourceCommit, budgets, clock = Date.now }) {
+export function createBoundary({ files, sourceCommit, sourceOmissions, budgets, clock = Date.now }) {
   // Copy inputs so a caller cannot mutate the source view through an alias.
   const view = new Map(Object.entries(files));
+  const omissions = sourceOmissions === undefined ? null : structuredClone(sourceOmissions);
+  if (omissions !== null && (!omissions || typeof omissions !== "object" || Array.isArray(omissions) ||
+      Object.entries(omissions).some(([reason, count]) => !["sensitive-path", "link-or-submodule", "large-file", "binary-file"].includes(reason) || !Number.isSafeInteger(count) || count < 1))) throw new Error("Invalid source omission counts");
   for (const [path, text] of view) {
     safePath(path);
     if (sensitivePath(path) || typeof text !== "string") throw new Error("Unsafe source view");
@@ -61,7 +69,10 @@ export function createBoundary({ files, sourceCommit, budgets, clock = Date.now 
       let result;
       if (tool === "ctx_source_info") {
         keys(input, []);
-        result = JSON.stringify({ sourceCommit, trackedSourcePaths: [...view.keys()].filter(path => !path.startsWith(".ctx/") && !path.startsWith(".agents/skills/ctx/")).sort() });
+        result = JSON.stringify({ sourceCommit, inventoryComplete: false,
+          availableSourcePaths: [...view.keys()].filter(path => !path.startsWith(".ctx/") && !path.startsWith(".agents/skills/ctx/")).sort(),
+          omittedFileCounts: omissions,
+          limitation: "Filtered available view, not the complete Git inventory. An unavailable path is not evidence that it is absent from the repository. Sensitive filenames and contents are withheld." });
       } else if (tool === "ctx_read") {
         keys(input, ["path", "offset", "limit"], ["path"]);
         const path = safePath(input.path);

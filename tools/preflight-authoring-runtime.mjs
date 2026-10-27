@@ -69,6 +69,7 @@ export function preflightFailure(error) {
     ["Selected provider has no stored credential", "selected-provider-has-no-stored-credential"],
     ["Exact model is absent from this isolated local catalog; no fallback selected", "exact-model-not-in-local-catalog"],
     ["Selected registry requires an unsupported credential or discovery resolver", "selected-registry-resolver-not-supported"],
+    ["Selected Pi model requires complete valid request limits, input, reasoning, and cost metadata", "selected-model-metadata-incomplete-or-invalid"],
     ["Stored credential requires an unsupported resolver; no helper was executed", "stored-credential-resolver-not-supported"],
   ]);
   return { localQualification: "not-passed", reason: known.get(error?.message) || (error?.code === "ENOENT" ? "configured-file-unavailable" : "local-configuration-not-qualified"), inferenceRequested: false, billingRouteChanged: false };

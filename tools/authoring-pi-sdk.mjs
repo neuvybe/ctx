@@ -7,6 +7,23 @@ import authoringExtension, { qualifiedThinking } from "./authoring-pi-extension.
 import { readOnlyCredentialStore, selectedPiCredential } from "./lib/authoring-auth.mjs";
 import { toolNames } from "./lib/authoring-boundary.mjs";
 
+// registerProvider takes extension definitions, not CLI JSON definitions. It
+// does not supply the CLI loader's defaults. Refuse incomplete request/cost
+// metadata rather than letting NaN token limits or a cost-calculation crash
+// reach inference. Trial-local profiles can supply explicit, reviewed values.
+export function validatePiModel(model) {
+  const rateNames = ["input", "output", "cacheRead", "cacheWrite"];
+  const validRates = rates => rates && typeof rates === "object" && !Array.isArray(rates) && rateNames.every(key => Number.isFinite(rates[key]) && rates[key] >= 0);
+  if (!model || typeof model.name !== "string" || !model.name || typeof model.api !== "string" || !model.api ||
+      typeof model.baseUrl !== "string" || !model.baseUrl || typeof model.reasoning !== "boolean" ||
+      !Array.isArray(model.input) || !model.input.includes("text") || model.input.some(value => !["text", "image"].includes(value)) ||
+      !Number.isSafeInteger(model.contextWindow) || model.contextWindow < 1 || !Number.isSafeInteger(model.maxTokens) || model.maxTokens < 1 || model.maxTokens > model.contextWindow ||
+      !validRates(model.cost) || (model.cost.tiers !== undefined && (!Array.isArray(model.cost.tiers) || model.cost.tiers.some(tier => !validRates(tier) || !Number.isSafeInteger(tier.inputTokensAbove) || tier.inputTokensAbove < 0)))) {
+    throw new Error("Selected Pi model requires complete valid request limits, input, reasoning, and cost metadata");
+  }
+  return model;
+}
+
 export async function selectedModelConfig(path, provider, model, runtime, { localDaemon = false } = {}) {
   const raw = await readFile(path, "utf8");
   if (Buffer.byteLength(raw) > 1024 * 1024) throw new Error("Model registry is too large");
@@ -39,6 +56,7 @@ export async function selectedModelConfig(path, provider, model, runtime, { loca
   // Disable provider-level model fallbacks rather than changing the user's
   // requested model after a version/access failure.
   if (selected.compat) selected.compat = { ...selected.compat, allowedFallbackModels: [] };
+  validatePiModel({ ...selected, api: selected.api ?? config.api, baseUrl: selected.baseUrl ?? config.baseUrl });
   return { ...Object.fromEntries(["baseUrl", "api", "headers", "authHeader"].filter(key => config[key] !== undefined).map(key => [key, config[key]])), ...(localDaemon ? { apiKey: "ollama" } : {}), models: [selected] };
 }
 
@@ -60,6 +78,7 @@ export async function createIsolatedPi({ pi, cwd, agentDir, model, provider, thi
   }
   let selected = modelRuntime.getModel(provider, model);
   if (!selected) throw new Error("Exact model is absent from this isolated local catalog; no fallback selected");
+  validatePiModel(selected);
   selected = { ...selected, compat: { ...selected.compat, allowedFallbackModels: [] } };
   const settingsManager = pi.SettingsManager.inMemory({ retry: { enabled: false, provider: { maxRetries: 0 } }, compaction: { enabled: false }, cacheWarming: "off", enableAnalytics: false, enableInstallTelemetry: false, defaultProjectTrust: "never", packages: [], extensions: [], skills: [], prompts: [], themes: [] });
   const resourceLoader = new pi.DefaultResourceLoader({ cwd, agentDir, settingsManager, noExtensions: true, disabledBuiltinExtensions: ["mcp", "codemode"], noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true, systemPrompt, extensionFactories: [authoringExtension], agentsFilesOverride: () => ({ agentsFiles: [] }), appendSystemPromptOverride: () => [] });
