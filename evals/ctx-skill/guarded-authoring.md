@@ -84,6 +84,10 @@ canonical relative paths; parent traversal, absolute paths, backslashes, control
 characters, and Git internals are rejected. Virtual paths never resolve symlinks
 or reach the host filesystem. Full skill, root owner, router, and continuation
 reads are prerequisites for writes; this observes access, not comprehension.
+The broker also accepts a coordinator-selected `readOnly: true` input for fresh
+reader comparisons; it refuses all context writes regardless of preimage or
+orientation. Any attempted reader write must be reported as a task violation.
+This does not change the authoring CLI plan or give the model mode-selection power.
 
 Tool-call, returned UTF-8 byte, cumulative write-byte, and elapsed-time budgets
 are enforced in the broker, synchronously even when Pi schedules parallel calls.

@@ -34,7 +34,8 @@ function keys(input, allowed, required = allowed) {
       required.some(key => !Object.hasOwn(input, key))) throw new Error("Invalid tool arguments");
 }
 
-export function createBoundary({ files, sourceCommit, sourceOmissions, budgets, clock = Date.now }) {
+export function createBoundary({ files, sourceCommit, sourceOmissions, readOnly = false, budgets, clock = Date.now }) {
+  if (typeof readOnly !== "boolean") throw new Error("Invalid read-only selection");
   // Copy inputs so a caller cannot mutate the source view through an alias.
   const view = new Map(Object.entries(files));
   const omissions = sourceOmissions === undefined ? null : structuredClone(sourceOmissions);
@@ -105,6 +106,7 @@ export function createBoundary({ files, sourceCommit, sourceOmissions, budgets, 
         }
         event.path = path;
       } else if (tool === "ctx_write") {
+        if (readOnly) throw new Error("This reader trial is read-only; context writes are forbidden");
         keys(input, ["path", "text", "expectedHash"]);
         const path = safePath(input.path);
         if (!mayWrite(path)) throw new Error("Only context facts, routing, and local continuation are editable");

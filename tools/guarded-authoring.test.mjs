@@ -57,6 +57,16 @@ test("source information describes a filtered view without exposing withheld fil
   assert.throws(() => createBoundary(input({ sourceOmissions: { "SECRET-FILENAME": 1 } })));
 });
 
+test("fresh-reader boundaries refuse every write even after complete orientation and a valid preimage", () => {
+  const boundary = createBoundary(input({ readOnly: true }));
+  orient(boundary);
+  assert.throws(() => boundary.execute("ctx_write", { path: ".ctx/INDEX.md", text: "x", expectedHash: digest(files[".ctx/INDEX.md"]) }), /read-only/);
+  assert.deepEqual(boundary.snapshot().writes, {});
+  assert.equal(boundary.snapshot().events.at(-1).outcome, "denied");
+  assert.equal(JSON.parse(boundary.execute("ctx_read", { path: "src/app.ts" })).path, "src/app.ts");
+  assert.throws(() => createBoundary(input({ readOnly: "true" })));
+});
+
 test("tool allowlist denies commands, publication, delegation, peers, and unknown arguments without recording their payload", () => {
   const boundary = createBoundary(input());
   const marker = "PRIVATE-ARGUMENT-MARKER";

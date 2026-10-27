@@ -99,9 +99,11 @@ and workspace roots remain empty; shell, discovery, delegation, apps, and
 plugins remain disabled. See the runner contract for the exact runtime
 differences. The adapter now pins 0.164.0 rather than silently accepting upgrades.
 
-After these follow-up changes, the complete Node suite passed 46 tests with no
+After these follow-up changes, the complete Node suite passed 47 tests with no
 failures or skips, including all four installed-runtime checks. Root Go vet and
 the full ctx race suite also passed. These checks used no real model inference.
+The fresh-reader broker regression additionally refuses every write, even after
+complete orientation and a correct preimage; authoring behavior stays unchanged.
 
 Reruns require a new private destination and a newly frozen contract. Preserve
 the original pilot, include all new failures, and keep application source,
