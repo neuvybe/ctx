@@ -1,0 +1,39 @@
+# CONTINUE.md — local working state for premerge-project
+
+> Machine-local state at `.ctx/local/CONTINUE.md` in **`team`**
+> visibility mode. Update at meaningful checkpoints and before handoff or
+> compaction. Keep it near 300 words; durable facts belong in shared context.
+
+## Objective
+
+- **Current:** Awaiting direction.
+- **Done when:** Not yet defined.
+
+## Repository position
+
+- **Branch / HEAD:** [record branch and commit]
+- **Working tree:** Not checked after scaffold creation on 2026-10-25; run
+  `git status` before relying on this field.
+- **Files in scope:** None.
+
+## Last completed
+
+- Created the `.ctx/` context scaffold.
+
+## In flight
+
+- **State:** None.
+- **Verification:** Not started.
+
+## Next action
+
+- Await a concrete objective.
+
+## Blockers and open questions
+
+- None.
+
+## Shared-context follow-ups
+
+- None. Record durable discoveries in the relevant fact document or canonical
+  project record rather than only in this local file.
