@@ -32,3 +32,16 @@ facts and nested topics, add-on installation, doctor/status, visibility, and
 fresh-clone team hydration. Authored content is added only to temporary test
 copies; these captured files remain untouched. Tests need neither the historical
 binary nor Git history, network access, or a model provider.
+
+The input descriptor stays pinned to its captured `2.0.1` template revision.
+Update expectations use the currently supported revision for the flat layout,
+not the default folder-first layout. Before updating, an older supported
+revision may produce only the expected doctor request to run `ctx update`;
+all other structural and visibility checks must still pass. Hydration must
+leave the historical revision and every other durable byte unchanged.
+
+The tests compare both complete owner-controlled regions of README and INDEX
+before and after each update/add operation, independently of the production
+managed-marker parser. A serial regression test temporarily advances the flat
+layout's supported revision to exercise update and hydration expectations,
+then restores the in-process catalog. No captured fixture bytes are changed.
