@@ -5,6 +5,11 @@ virtual context proposals, deterministic boundary tests, native Codex qualificat
 and read-only Pi credential isolation for future independent repository trials.
 Local preflight is separate from provider-access validation and launch approval.
 
+The [four-stage evaluation scorecard](four-stage-scorecard.md) separately grades
+execution, structure, supported wording, and useful downstream results. Its
+public synthetic calibration rejects seeded mistakes before any new model run;
+it does not infer semantic correctness from passing metadata or reader answers.
+
 The [flat-versus-folder retrieval protocol](retrieval-comparison.md) and
 [recorded results](retrieval-comparison-results.md) cover the new layout.
 Three of eight sessions returned final answers; the results do not establish

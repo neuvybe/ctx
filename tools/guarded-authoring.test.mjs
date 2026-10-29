@@ -10,6 +10,8 @@ import { auditRepository, coordinatorEnv, freshDestination, frozenSources, git, 
 import { publicEvent, runProcess } from "./lib/authoring-process.mjs";
 import { piArguments, runAuthoring, validatePlan } from "./run-guarded-authoring.mjs";
 import authoringExtension from "./authoring-pi-extension.mjs";
+import { evaluateScorecard } from "./lib/context-scorecard.mjs";
+import { readFrozenTrial } from "./lib/scorecard-io.mjs";
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const budgets = { timeoutMs: 60000, maxCalls: 50, maxOutputBytes: 1024 * 1024, maxWriteBytes: 1024 * 1024 };
@@ -349,6 +351,13 @@ test("runner prepares and replays a genuine scaffold with frozen attempts, coord
   assert.equal((await readFile(join(output, "candidate/.ctx/context/behavior/access-rules.md"), "utf8")).includes("Cancellation is idempotent"), true);
   assert.equal(JSON.parse(await readFile(join(output, "attempt.json"), "utf8")).final, result.final);
   assert.deepEqual(await auditRepository(linked), before);
+  // A genuine current scaffold remains structurally valid while draft. Replay
+  // is not a provider trial, and missing semantic review never becomes approval.
+  const scorecard = evaluateScorecard(await readFrozenTrial(output));
+  assert.equal(scorecard.stages.structurallyValidContext.verdict, "passed", JSON.stringify(scorecard.stages.structurallyValidContext));
+  assert.notEqual(scorecard.stages.successfulExecution.verdict, "passed");
+  assert.equal(scorecard.stages.supportedWording.verdict, "not-evaluated");
+  assert.equal(scorecard.promotion.eligibleForReviewedUse, false);
   // A refusal is an observed boundary event, not a missing/rewritten attempt.
   await writeFile(replay, JSON.stringify({ operations: [...operations, { tool: "bash", input: { command: "FORBIDDEN-COMMAND-MARKER" } }], final: "Partial attempt with a refused tool" }));
   const partialRoot = join(root, "partial");

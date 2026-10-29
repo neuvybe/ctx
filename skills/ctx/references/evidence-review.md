@@ -28,8 +28,23 @@ public boundaries, state changes, failure invariants, persistence, concurrency,
 and owner acceptance when they are material to the requested topic.
 For a public-surface inventory, compare the claimed boundary with relevant
 export declarations and signatures, not just the main callable names.
+For HTTP endpoint examples, resolve router mounts as well as child declarations.
+Show the full callable path for each endpoint, or label a relative path and its
+base explicitly; do not silently drop a shared prefix in a list.
 
 ## Match the strength of the statement
+
+For a consequential parent rule or flow, inventory the actual operations,
+actors, identity layers, and state/history branches it appears to cover. Check
+each applicable case against source, including paths that bypass a summarized
+step. Generic subjects such as "a request" can imply a universal rule without
+using "all". Record a compact case table with source evidence and whether each
+case supports the summary, is outside its explicitly qualified scope, contradicts
+it, or remains unresolved. Explain the inventory's boundary; do not invent cases
+or a contradiction merely to fill the table. If a real case contradicts the
+summary, narrow that parent itself and recheck the correction. A matching topic
+file or another supported branch cannot certify it. Keep ambiguous identity
+names distinct from the precise condition that selects a stored outcome.
 
 Inspect evidence independently of the context's description. For a test claim,
 read the complete cited test body. Before judging a quantifier or lifecycle
@@ -114,6 +129,10 @@ Evidence source: `repo-relative/path.go` — symbol or section, and observed sup
 Reconcile citations before closing the semantic audit. For each audited fact,
 report citation gaps or the supporting paths checked against its metadata;
 merely reading a cited file does not establish metadata coverage.
+This includes sources identified by the audit when the prose names no file,
+such as a claim about test fixtures. Keep the supporting path discoverable near
+the claim or in a compact evidence list, and in that fact's metadata; a child's
+source list does not cover its parent.
 
 When Node.js is already available and explicit references use this convention,
 run the skill's read-only helper rather than relying solely on a manual scan:

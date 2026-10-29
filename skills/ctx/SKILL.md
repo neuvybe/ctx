@@ -76,6 +76,18 @@ and canonical requirements are evidence for different claims.
 An observed limitation is not an accepted tradeoff without an owner decision
 or explicit requirement. Record "owner decision not documented" when unknown.
 
+Before closing population, compare the authored scope with the public entrypoints
+and core workflows inspected. Cover consequential preconditions, exceptions,
+state/reason mappings, retained-history rules, and authority boundaries where
+they exist; a component list alone does not explain behavior. Follow a rule to
+its final returned or persisted outcome, not only an intermediate classifier.
+Report uncovered areas as gaps rather than implying complete coverage.
+For consequential parent summaries, check the operations and branches the summary
+appears to cover, even when it says "a request" rather than "all requests".
+Use the counterexample pass in the evidence-audit contract before handing off
+new or changed summaries, including drafts; correct child detail is not a repair
+for an overbroad parent.
+
 Remove filled template prompts and inapplicable sections. Keep parent summaries
 short; prefer linking canonical detail over copying it. During initial
 population, give independently useful explanations sibling topic files with
@@ -98,7 +110,9 @@ one metadata line:
   commit as `<commit-hash> @ YYYY-MM-DD` and supporting repository-relative paths
   in `sources`. Paths are relative to the target repository, not the context
   folder. Include supporting files cited in the prose, not just the main source
-  file. Do not cite the fact document itself as evidence. This records scoped
+  file. Include evidence behind unnamed assertions such as "the tests show";
+  every parent summary owns its own supporting sources, even if a child also
+  lists them. Do not cite the fact document itself as evidence. This records scoped
   evidence checking, not automatic human approval. An index's verification never certifies linked
   topics; inspect each relevant document's readiness and evidence.
 - Listed sources must be tracked at that commit and match current evidence.

@@ -5,6 +5,12 @@ Preparation and replay do not call a model. Ordinary CI runs only deterministic
 boundary tests, never provider trials. Existing retrieval results and their
 historical runner remain unchanged.
 
+After freezing an attempt, use the
+[four-stage evaluation scorecard](four-stage-scorecard.md). Model-free calibration
+and grounded independent review are distinct from a successful provider request,
+passing doctor/status, or a reader's correct answer. The evaluator never launches
+providers, modifies candidates, or publishes PRs.
+
 ## Current readiness
 
 See the [point-in-time runtime qualification results](runtime-qualification.md)

@@ -21,7 +21,9 @@ jobs:
         working-directory: testdata/booking-demo
       - run: go vet ./... && go test -race ./...
         working-directory: testdata/settings-demo
-      - run: node --test tools/prepare-skill-demo.test.mjs tools/prepare-evidence-review.test.mjs tools/check-evidence-citations.test.mjs tools/prepare-retrieval-comparison.test.mjs tools/guarded-authoring.test.mjs tools/authoring-runtime.test.mjs
+      - run: node --test tools/prepare-skill-demo.test.mjs tools/prepare-evidence-review.test.mjs tools/check-evidence-citations.test.mjs tools/prepare-retrieval-comparison.test.mjs tools/guarded-authoring.test.mjs tools/authoring-runtime.test.mjs tools/context-scorecard.test.mjs evals/ctx-skill/fixtures/scorecard/client-reopen.test.mjs
+      - name: Calibrate context scorecard without models
+        run: node tools/calibrate-context-scorecard.mjs
 
   commitlint:
     name: Conventional commits
